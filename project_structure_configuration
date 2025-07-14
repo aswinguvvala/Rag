@@ -1,0 +1,521 @@
+# Multi-Modal Space Exploration Intelligence System (MSEIS)
+# Project Structure and Configuration Files
+
+## Project Structure
+```
+mseis/
+├── agents/
+│   ├── __init__.py
+│   ├── base_agent.py
+│   ├── document_agent.py
+│   ├── image_agent.py
+│   ├── graph_agent.py
+│   ├── realtime_agent.py
+│   └── orchestrator_agent.py
+├── core/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── embeddings.py
+│   ├── retrievers.py
+│   ├── rerankers.py
+│   └── chains.py
+├── data_sources/
+│   ├── __init__.py
+│   ├── nasa_api.py
+│   ├── arxiv_loader.py
+│   ├── image_loader.py
+│   └── news_scraper.py
+├── storage/
+│   ├── __init__.py
+│   ├── pinecone_manager.py
+│   ├── neo4j_manager.py
+│   └── cache_manager.py
+├── evaluation/
+│   ├── __init__.py
+│   ├── metrics.py
+│   ├── evaluator.py
+│   └── llm_judge.py
+├── utils/
+│   ├── __init__.py
+│   ├── logging_config.py
+│   ├── monitoring.py
+│   └── rate_limiter.py
+├── tests/
+│   ├── __init__.py
+│   ├── test_agents.py
+│   ├── test_retrievers.py
+│   └── test_integration.py
+├── docker/
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── requirements.txt
+├── .env.example
+├── config.yaml
+├── main.py
+└── streamlit_app.py
+```
+
+## requirements.txt
+```txt
+# Core Dependencies
+langchain==0.1.0
+langchain-community==0.1.0
+langchain-openai==0.0.5
+langchain-experimental==0.0.47
+pinecone-client==3.0.0
+neo4j==5.15.0
+openai==1.10.0
+anthropic==0.12.0
+
+# Vector and ML
+sentence-transformers==2.2.2
+transformers==4.36.0
+torch==2.1.0
+torchvision==0.16.0
+clip-interrogator==0.6.0
+faiss-cpu==1.7.4
+
+# Data Processing
+pandas==2.1.4
+numpy==1.24.3
+scikit-learn==1.3.2
+beautifulsoup4==4.12.2
+arxiv==2.0.0
+pillow==10.1.0
+opencv-python==4.8.1
+
+# API and Web
+requests==2.31.0
+aiohttp==3.9.1
+fastapi==0.109.0
+uvicorn==0.27.0
+pydantic==2.5.3
+httpx==0.26.0
+
+# Streaming and Real-time
+asyncio==3.4.3
+websockets==12.0
+sse-starlette==1.8.2
+
+# UI and Visualization
+streamlit==1.29.0
+plotly==5.18.0
+matplotlib==3.8.2
+gradio==4.14.0
+
+# Monitoring and Logging
+prometheus-client==0.19.0
+structlog==24.1.0
+python-json-logger==2.0.7
+sentry-sdk==1.39.2
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.3
+pytest-mock==3.12.0
+pytest-cov==4.1.0
+
+# Development Tools
+python-dotenv==1.0.0
+black==23.12.1
+flake8==7.0.0
+mypy==1.8.0
+pre-commit==3.6.0
+
+# Caching and Performance
+redis==5.0.1
+diskcache==5.6.3
+cachetools==5.3.2
+
+# Rate Limiting
+ratelimit==2.2.1
+slowapi==0.1.9
+```
+
+## .env.example
+```env
+# OpenAI Configuration
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_MODEL=gpt-4-1106-preview
+OPENAI_EMBEDDING_MODEL=text-embedding-3-large
+
+# Anthropic Configuration (optional)
+ANTHROPIC_API_KEY=your_anthropic_api_key
+CLAUDE_MODEL=claude-3-opus-20240229
+
+# Pinecone Configuration
+PINECONE_API_KEY=your_pinecone_api_key
+PINECONE_ENVIRONMENT=your_pinecone_environment
+PINECONE_INDEX_NAME=mseis-vectors
+
+# Neo4j Configuration
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=your_neo4j_password
+
+# NASA API Configuration
+NASA_API_KEY=your_nasa_api_key
+
+# Redis Configuration (for caching)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=your_redis_password
+
+# Monitoring Configuration
+SENTRY_DSN=your_sentry_dsn
+PROMETHEUS_PORT=8000
+
+# System Configuration
+LOG_LEVEL=INFO
+MAX_WORKERS=4
+RATE_LIMIT_CALLS=100
+RATE_LIMIT_PERIOD=60
+CACHE_TTL=3600
+```
+
+## config.yaml
+```yaml
+# MSEIS Configuration File
+system:
+  name: "Multi-Modal Space Exploration Intelligence System"
+  version: "1.0.0"
+  environment: "development"  # development, staging, production
+
+# Agent Configuration
+agents:
+  document:
+    enabled: true
+    chunk_size: 1000
+    chunk_overlap: 200
+    metadata_extractors:
+      - title
+      - authors
+      - date
+      - mission
+      - keywords
+    
+  image:
+    enabled: true
+    model: "openai/clip-vit-base-patch32"
+    batch_size: 32
+    max_resolution: 1024
+    
+  graph:
+    enabled: true
+    max_depth: 3
+    relationship_types:
+      - PART_OF_MISSION
+      - DISCOVERED_BY
+      - ORBITS
+      - LAUNCHED_FROM
+      - DEVELOPED_BY
+      - SUCCESSOR_OF
+    
+  realtime:
+    enabled: true
+    update_interval: 300  # seconds
+    sources:
+      - nasa_api
+      - space_news
+      - iss_tracker
+    
+  orchestrator:
+    enabled: true
+    routing_strategy: "confidence_based"  # simple, confidence_based, llm_based
+    min_confidence: 0.7
+
+# Vector Storage Configuration
+pinecone:
+  namespaces:
+    documents: "nasa-docs"
+    images: "space-images"
+    news: "space-news"
+    academic: "arxiv-papers"
+  
+  embedding_dimensions: 1536
+  metric: "cosine"
+  
+# Graph Database Configuration
+neo4j:
+  batch_size: 1000
+  constraints:
+    - "CREATE CONSTRAINT mission_id IF NOT EXISTS FOR (m:Mission) REQUIRE m.id IS UNIQUE"
+    - "CREATE CONSTRAINT astronaut_id IF NOT EXISTS FOR (a:Astronaut) REQUIRE a.id IS UNIQUE"
+    - "CREATE CONSTRAINT body_id IF NOT EXISTS FOR (b:CelestialBody) REQUIRE b.id IS UNIQUE"
+    
+# Retrieval Configuration
+retrieval:
+  hybrid:
+    vector_weight: 0.7
+    keyword_weight: 0.2
+    graph_weight: 0.1
+  
+  top_k: 20
+  rerank_top_k: 5
+  
+  reranker:
+    model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    batch_size: 32
+
+# Data Sources Configuration
+data_sources:
+  nasa:
+    endpoints:
+      apod: "https://api.nasa.gov/planetary/apod"
+      neo: "https://api.nasa.gov/neo/rest/v1/neo"
+      mars_rover: "https://api.nasa.gov/mars-photos/api/v1/rovers"
+      exoplanet: "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
+    
+  arxiv:
+    categories:
+      - "astro-ph"  # Astrophysics
+      - "astro-ph.GA"  # Galaxies
+      - "astro-ph.SR"  # Solar and Stellar
+      - "astro-ph.EP"  # Earth and Planetary
+    max_results: 100
+    
+  news:
+    feeds:
+      - "https://www.nasa.gov/rss/dyn/breaking_news.rss"
+      - "https://www.space.com/feeds/all"
+      - "https://www.esa.int/rssfeed/Our_Activities/Space_News"
+    update_frequency: 3600  # seconds
+
+# Evaluation Configuration
+evaluation:
+  metrics:
+    retrieval:
+      - recall_at_k
+      - precision_at_k
+      - mrr
+      - ndcg
+    
+    generation:
+      - bleu
+      - rouge
+      - bertscore
+      - llm_judge_score
+    
+  test_queries:
+    - category: "factual"
+      queries:
+        - "What is the distance from Earth to Mars?"
+        - "Who were the crew members of Apollo 11?"
+        - "What is the composition of Jupiter's atmosphere?"
+        
+    - category: "complex"
+      queries:
+        - "Compare the propulsion systems used in SpaceX Falcon 9 and NASA's SLS"
+        - "How have exoplanet detection methods evolved since the Kepler mission?"
+        
+    - category: "multimodal"
+      queries:
+        - "Show me images of the Crab Nebula and explain its formation"
+        - "What does the latest Mars rover imagery tell us about past water activity?"
+
+# Monitoring Configuration
+monitoring:
+  metrics:
+    - query_latency
+    - agent_response_time
+    - retrieval_accuracy
+    - cache_hit_rate
+    - error_rate
+  
+  alerts:
+    high_latency_threshold: 5000  # ms
+    error_rate_threshold: 0.05
+    low_cache_hit_threshold: 0.3
+
+# Cache Configuration
+cache:
+  strategy: "lru"
+  max_size: 1000
+  ttl: 3600
+  
+  cached_operations:
+    - embeddings
+    - llm_responses
+    - api_calls
+    - graph_queries
+
+# Rate Limiting Configuration
+rate_limiting:
+  default:
+    calls: 100
+    period: 60
+  
+  by_endpoint:
+    nasa_api:
+      calls: 1000
+      period: 3600
+    
+    openai_api:
+      calls: 500
+      period: 60
+    
+    arxiv_api:
+      calls: 10
+      period: 60
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "json"
+  
+  handlers:
+    - type: "console"
+      level: "INFO"
+    
+    - type: "file"
+      level: "DEBUG"
+      filename: "logs/mseis.log"
+      max_bytes: 10485760  # 10MB
+      backup_count: 5
+    
+    - type: "sentry"
+      level: "ERROR"
+      
+  structured_fields:
+    - user_id
+    - query_id
+    - agent_name
+    - latency
+    - error_type
+```
+
+## docker-compose.yml
+```yaml
+version: '3.8'
+
+services:
+  # Main Application
+  mseis-app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: mseis-app
+    ports:
+      - "8501:8501"  # Streamlit
+      - "8000:8000"  # FastAPI
+    environment:
+      - ENVIRONMENT=production
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - neo4j
+      - redis
+    networks:
+      - mseis-network
+
+  # Neo4j Graph Database
+  neo4j:
+    image: neo4j:5.15-community
+    container_name: mseis-neo4j
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
+      - NEO4J_PLUGINS=["apoc", "graph-data-science"]
+      - NEO4J_dbms_memory_pagecache_size=1G
+      - NEO4J_dbms_memory_heap_max__size=1G
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    networks:
+      - mseis-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: mseis-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - mseis-network
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus
+    container_name: mseis-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - mseis-network
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana
+    container_name: mseis-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - mseis-network
+
+networks:
+  mseis-network:
+    driver: bridge
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+```
+
+## Dockerfile
+```dockerfile
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p logs data/cache data/downloads
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Expose ports
+EXPOSE 8501 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Run the application
+CMD ["python", "main.py"]
+```

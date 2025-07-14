@@ -1,0 +1,209 @@
+# MSEIS Configuration File
+system:
+  name: "Multi-Modal Space Exploration Intelligence System"
+  version: "1.0.0"
+  environment: "development"  # development, staging, production
+
+# Agent Configuration
+agents:
+  document:
+    enabled: true
+    chunk_size: 1000
+    chunk_overlap: 200
+    metadata_extractors:
+      - title
+      - authors
+      - date
+      - mission
+      - keywords
+    
+  image:
+    enabled: true
+    model: "openai/clip-vit-base-patch32"
+    batch_size: 32
+    max_resolution: 1024
+    
+  graph:
+    enabled: true
+    max_depth: 3
+    relationship_types:
+      - PART_OF_MISSION
+      - DISCOVERED_BY
+      - ORBITS
+      - LAUNCHED_FROM
+      - DEVELOPED_BY
+      - SUCCESSOR_OF
+    
+  realtime:
+    enabled: true
+    update_interval: 300  # seconds
+    sources:
+      - nasa_api
+      - space_news
+      - iss_tracker
+    
+  orchestrator:
+    enabled: true
+    routing_strategy: "confidence_based"  # simple, confidence_based, llm_based
+    min_confidence: 0.7
+
+# Vector Storage Configuration
+pinecone:
+  namespaces:
+    documents: "nasa-docs"
+    images: "space-images"
+    news: "space-news"
+    academic: "arxiv-papers"
+  
+  embedding_dimensions: 1536
+  metric: "cosine"
+  
+# Graph Database Configuration
+neo4j:
+  batch_size: 1000
+  constraints:
+    - "CREATE CONSTRAINT mission_id IF NOT EXISTS FOR (m:Mission) REQUIRE m.id IS UNIQUE"
+    - "CREATE CONSTRAINT astronaut_id IF NOT EXISTS FOR (a:Astronaut) REQUIRE a.id IS UNIQUE"
+    - "CREATE CONSTRAINT body_id IF NOT EXISTS FOR (b:CelestialBody) REQUIRE b.id IS UNIQUE"
+    
+# Retrieval Configuration
+retrieval:
+  hybrid:
+    vector_weight: 0.7
+    keyword_weight: 0.2
+    graph_weight: 0.1
+  
+  top_k: 20
+  rerank_top_k: 5
+  
+  reranker:
+    model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    batch_size: 32
+
+# Data Sources Configuration
+data_sources:
+  nasa:
+    endpoints:
+      apod: "https://api.nasa.gov/planetary/apod"
+      neo: "https://api.nasa.gov/neo/rest/v1/neo"
+      mars_rover: "https://api.nasa.gov/mars-photos/api/v1/rovers"
+      exoplanet: "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
+    
+  arxiv:
+    categories:
+      - "astro-ph"  # Astrophysics
+      - "astro-ph.GA"  # Galaxies
+      - "astro-ph.SR"  # Solar and Stellar
+      - "astro-ph.EP"  # Earth and Planetary
+    max_results: 100
+    
+  news:
+    feeds:
+      - "https://www.nasa.gov/rss/dyn/breaking_news.rss"
+      - "https://www.space.com/feeds/all"
+      - "https://www.esa.int/rssfeed/Our_Activities/Space_News"
+    update_frequency: 3600  # seconds
+
+# Evaluation Configuration
+evaluation:
+  metrics:
+    retrieval:
+      - recall_at_k
+      - precision_at_k
+      - mrr
+      - ndcg
+    
+    generation:
+      - bleu
+      - rouge
+      - bertscore
+      - llm_judge_score
+    
+  test_queries:
+    - category: "factual"
+      queries:
+        - "What is the distance from Earth to Mars?"
+        - "Who were the crew members of Apollo 11?"
+        - "What is the composition of Jupiter's atmosphere?"
+        
+    - category: "complex"
+      queries:
+        - "Compare the propulsion systems used in SpaceX Falcon 9 and NASA's SLS"
+        - "How have exoplanet detection methods evolved since the Kepler mission?"
+        
+    - category: "multimodal"
+      queries:
+        - "Show me images of the Crab Nebula and explain its formation"
+        - "What does the latest Mars rover imagery tell us about past water activity?"
+
+# Monitoring Configuration
+monitoring:
+  metrics:
+    - query_latency
+    - agent_response_time
+    - retrieval_accuracy
+    - cache_hit_rate
+    - error_rate
+  
+  alerts:
+    high_latency_threshold: 5000  # ms
+    error_rate_threshold: 0.05
+    low_cache_hit_threshold: 0.3
+  
+  prometheus_port: 8000
+
+# Cache Configuration
+cache:
+  strategy: "lru"
+  max_size: 1000
+  ttl: 3600
+  
+  cached_operations:
+    - embeddings
+    - llm_responses
+    - api_calls
+    - graph_queries
+
+# Rate Limiting Configuration
+rate_limiting:
+  default:
+    calls: 100
+    period: 60
+  
+  by_endpoint:
+    nasa_api:
+      calls: 1000
+      period: 3600
+    
+    openai_api:
+      calls: 500
+      period: 60
+    
+    arxiv_api:
+      calls: 10
+      period: 60
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "json"
+  
+  handlers:
+    - type: "console"
+      level: "INFO"
+    
+    - type: "file"
+      level: "DEBUG"
+      filename: "logs/mseis.log"
+      max_bytes: 10485760  # 10MB
+      backup_count: 5
+    
+    - type: "sentry"
+      level: "ERROR"
+      
+  structured_fields:
+    - user_id
+    - query_id
+    - agent_name
+    - latency
+    - error_type 
