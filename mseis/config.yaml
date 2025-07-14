@@ -4,6 +4,28 @@ system:
   version: "1.0.0"
   environment: "development"  # development, staging, production
 
+# API Configuration
+api:
+  # OpenAI Configuration
+  openai_api_key: ${OPENAI_API_KEY:}
+  openai_model: "gpt-4"
+  openai_embedding_model: "text-embedding-ada-002"
+  
+  # Pinecone Configuration (for vector storage)
+  pinecone_api_key: ${PINECONE_API_KEY:}
+  pinecone_environment: ${PINECONE_ENVIRONMENT:us-west1-gcp}
+  pinecone_index_name: ${PINECONE_INDEX_NAME:mseis-index}
+  
+  # Redis Configuration (for caching and real-time data)
+  redis_host: ${REDIS_HOST:localhost}
+  redis_port: ${REDIS_PORT:6379}
+  redis_password: ${REDIS_PASSWORD:}
+  
+  # Neo4j Configuration (for graph data)
+  neo4j_uri: ${NEO4J_URI:bolt://localhost:7687}
+  neo4j_user: ${NEO4J_USER:neo4j}
+  neo4j_password: ${NEO4J_PASSWORD:password}
+
 # Agent Configuration
 agents:
   document:
@@ -22,6 +44,22 @@ agents:
     model: "openai/clip-vit-base-patch32"
     batch_size: 32
     max_resolution: 1024
+    
+  code_intelligence:
+    enabled: true
+    max_repo_size_mb: 100
+    analysis_timeout: 300
+    supported_languages:
+      - python
+      - javascript
+      - typescript
+      - java
+      - go
+    metrics:
+      - complexity
+      - maintainability
+      - technical_debt
+      - architecture_patterns
     
   graph:
     enabled: true

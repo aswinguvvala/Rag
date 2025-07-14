@@ -12,6 +12,7 @@ from core.config import config
 from utils.logging_config import setup_logging, get_logger
 from utils.monitoring import start_metrics_server
 from agents.orchestrator_agent import OrchestratorAgent
+from agents.code_intelligence_agent import CodeIntelligenceAgent
 from agents.base_agent import QueryContext
 from evaluation.evaluator import MSEISEvaluator
 
@@ -35,8 +36,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global orchestrator instance
+# Global agent instances
 orchestrator = None
+code_intelligence_agent = None
 
 # Request/Response models
 class QueryRequest(BaseModel):
@@ -44,6 +46,21 @@ class QueryRequest(BaseModel):
     user_id: Optional[str] = None
     expertise_level: str = "general"
     metadata: Optional[Dict[str, Any]] = None
+
+class CodeAnalysisRequest(BaseModel):
+    repository_url: str
+    expertise_level: str = "general"
+    force_refresh: bool = False
+    user_id: Optional[str] = None
+
+class CodeAnalysisResponse(BaseModel):
+    repository: str
+    analysis: str
+    confidence: float
+    metrics: Dict[str, Any]
+    technologies: List[str]
+    architecture_patterns: List[str]
+    processing_time: float
 
 class QueryResponse(BaseModel):
     query_id: str
@@ -61,7 +78,7 @@ class HealthResponse(BaseModel):
 @app.on_event("startup")
 async def startup_event():
     """Initialize the system on startup"""
-    global orchestrator
+    global orchestrator, code_intelligence_agent
     
     logger.info("Starting MSEIS system...")
     
@@ -71,6 +88,10 @@ async def startup_event():
     # Initialize orchestrator
     orchestrator = OrchestratorAgent()
     await orchestrator.initialize()
+    
+    # Initialize code intelligence agent
+    code_intelligence_agent = CodeIntelligenceAgent()
+    await code_intelligence_agent.initialize()
     
     logger.info("MSEIS system started successfully")
 
@@ -130,6 +151,51 @@ async def process_query(request: QueryRequest):
         
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/analyze-code", response_model=CodeAnalysisResponse)
+async def analyze_code(request: CodeAnalysisRequest):
+    """Analyze a GitHub repository for architecture and code quality"""
+    if code_intelligence_agent is None:
+        raise HTTPException(status_code=503, detail="Code Intelligence Agent not initialized")
+        
+    try:
+        # Create query context for code analysis
+        context = QueryContext(
+            query_id=None,
+            original_query=f"Analyze repository: {request.repository_url}",
+            user_id=request.user_id,
+            user_expertise_level=request.expertise_level,
+            metadata={"force_refresh": request.force_refresh}
+        )
+        
+        # Process analysis
+        response = await code_intelligence_agent.process(context)
+        
+        # Extract metrics from sources
+        metrics = {}
+        technologies = []
+        architecture_patterns = []
+        
+        if response.sources:
+            source_data = response.sources[0]
+            metrics = {
+                "total_files": source_data.get("analyzed_files", 0),
+                "processing_time": response.processing_time
+            }
+            
+        return CodeAnalysisResponse(
+            repository=request.repository_url,
+            analysis=response.content,
+            confidence=response.confidence,
+            metrics=metrics,
+            technologies=technologies,
+            architecture_patterns=architecture_patterns,
+            processing_time=response.processing_time
+        )
+        
+    except Exception as e:
+        logger.error(f"Error analyzing code: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/evaluate")
