@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 import asyncio
 
 from langchain.schema import Document
-from langchain.retrievers import BaseRetriever
+from langchain_core.retrievers import BaseRetriever
 from rank_bm25 import BM25Okapi
 
 from storage.pinecone_manager import PineconeManager

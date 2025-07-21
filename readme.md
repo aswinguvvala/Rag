@@ -1,435 +1,237 @@
-# Multi-Modal Space Exploration Intelligence System (MSEIS)
+# IntelliSearch - Intelligent Information Retrieval System
 
-A production-ready RAG system demonstrating advanced techniques for space exploration knowledge management using multi-agent orchestration, graph databases, and real-time data integration.
+A professional RAG (Retrieval-Augmented Generation) system with semantic search and web fallback capabilities. Built for zero-hallucination information retrieval with enterprise-grade interface.
 
-## 🚀 Features
+![IntelliSearch](https://img.shields.io/badge/Status-Production%20Ready-green)
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![License](https://img.shields.io/badge/License-MIT-blue)
 
-### Core Capabilities
-- **Multi-Agent Architecture**: Specialized agents for documents, images, graphs, and real-time data
-- **Hybrid Retrieval**: Combines vector search, keyword matching, and graph traversal
-- **Advanced Reranking**: Cross-encoder models with diversity optimization
-- **Real-time Integration**: Live data from NASA APIs, ISS tracking, and space news
-- **Graph RAG**: Neo4j-powered entity relationship management
-- **Multi-modal Support**: Handles text, images, and structured data
+## Features
 
-### Technical Features
-- **Production-Ready**: Docker containerization, monitoring, and logging
-- **Scalable Design**: Horizontal scaling support with load balancing
-- **Comprehensive Caching**: Redis-based caching for embeddings and responses
-- **Rate Limiting**: Protects external API usage
-- **Evaluation Framework**: Built-in metrics and LLM-based quality assessment
+🔍 **Semantic Search**: Advanced FAISS-powered similarity search with configurable thresholds
+🌐 **Web Fallback**: Automatic web search when local knowledge base lacks relevant content
+🚫 **Zero Hallucination**: Strict context-only responses to prevent AI from generating unverified information
+🎨 **Professional Interface**: Clean, minimal design suitable for enterprise demonstrations
+⚡ **Multi-LLM Support**: Works with both free Ollama models and OpenAI API
+📊 **1,100+ Space Articles**: Pre-indexed knowledge base covering space exploration, astronomy, and physics
 
-## 📋 Prerequisites
+## Quick Start
 
-- Python 3.11+
-- Docker and Docker Compose
-- Neo4j 5.15+
-- Redis 7+
-- CUDA-capable GPU (optional, for faster embeddings)
+### Prerequisites
 
-### API Keys Required
-- OpenAI API key (GPT-4 and embeddings)
-- Pinecone API key and environment
-- NASA API key (free from https://api.nasa.gov)
-- Optional: Anthropic API key
+- Python 3.8 or higher
+- (Optional) Ollama for free local AI inference
+- (Optional) OpenAI API key for enhanced capabilities
 
-## 🛠️ Installation
+### Installation
 
-### 1. Clone the Repository
+1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/mseis.git
-cd mseis
+git clone https://github.com/your-username/intellisearch.git
+cd intellisearch
 ```
 
-### 2. Set Up Environment Variables
+2. **Create virtual environment**
 ```bash
-cp .env.example .env
-# Edit .env with your API keys and configuration
-```
-
-### 3. Install Dependencies
-
-#### Using Docker (Recommended)
-```bash
-docker-compose up -d
-```
-
-#### Manual Installation
-```bash
-# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-# Install dependencies
+3. **Install dependencies**
+```bash
 pip install -r requirements.txt
-
-# Start required services
-docker-compose up -d neo4j redis
 ```
 
-### 4. Initialize Databases
+4. **Set up AI providers (choose one or both)**
 
-#### Pinecone Setup
-```python
-# Run in Python shell
-from storage.pinecone_manager import PineconeManager
-import asyncio
-
-async def setup_pinecone():
-    manager = PineconeManager()
-    await manager.initialize()
-    print("Pinecone initialized successfully")
-
-asyncio.run(setup_pinecone())
-```
-
-#### Neo4j Setup
-The system will automatically create constraints and sample data on first run.
-
-## 🚀 Quick Start
-
-### 1. Start the API Server
+**Option A: Free Local AI with Ollama** (Recommended)
 ```bash
-python main.py
+# Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Start Ollama service
+ollama serve
+
+# Pull a model (in new terminal)
+ollama pull llama3.2:3b
 ```
 
-### 2. Launch Streamlit Interface
+**Option B: OpenAI API**
 ```bash
-streamlit run streamlit_app.py
+# Create .env file
+echo "OPENAI_API_KEY=your-api-key-here" > .env
 ```
 
-### 3. Access the Applications
-- Streamlit UI: http://localhost:8501
-- FastAPI Docs: http://localhost:8000/docs
-- Prometheus Metrics: http://localhost:8000/metrics
-- Neo4j Browser: http://localhost:7474
+### Usage
 
-## 📖 Usage Examples
-
-### Python API Client
-```python
-import aiohttp
-import asyncio
-
-async def query_mseis(query: str, expertise_level: str = "general"):
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-            "http://localhost:8000/query",
-            json={
-                "query": query,
-                "expertise_level": expertise_level
-            }
-        ) as response:
-            return await response.json()
-
-# Example queries
-result = asyncio.run(query_mseis(
-    "What are the latest findings from the James Webb Space Telescope?"
-))
-print(f"Answer: {result['answer']}")
-print(f"Confidence: {result['confidence']}")
-print(f"Sources: {len(result['sources'])}")
-```
-
-### cURL Examples
+**Start the application**
 ```bash
-# Simple query
-curl -X POST "http://localhost:8000/query" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "What is the current position of the ISS?",
-    "expertise_level": "general"
-  }'
+streamlit run intellisearch.py
+```
 
-# Health check
-curl "http://localhost:8000/health"
+**Access the interface**
+- Open your browser to `http://localhost:8501`
+- Enter queries in the search box
+- System automatically searches local knowledge base first
+- Falls back to web search if no relevant local content found
 
-# Get metrics
-curl "http://localhost:8000/metrics"
+## 📖 Example Analysis
+
+### For `karpathy/micrograd`:
+
+**📄 micrograd/engine.py**
+> "This file implements the core automatic differentiation engine with the Value class that tracks gradients for backpropagation in neural networks."
+
+**📄 micrograd/nn.py** 
+> "This file provides neural network building blocks including Neuron, Layer, and MLP classes for creating trainable networks using the micrograd engine."
+
+**🤖 Overall Insights:**
+> "This is a minimal deep learning library focused on educational purposes. The codebase demonstrates clean architecture with separation between the autodiff engine and neural network components..."
+
+## 🛠️ Supported Languages
+
+- **Python** (.py)
+- **JavaScript** (.js, .jsx)
+- **TypeScript** (.ts, .tsx)
+- **Java** (.java)
+- **C/C++** (.c, .cpp)
+- **Go** (.go)
+- **Rust** (.rs)
+- **PHP** (.php)
+- **Ruby** (.rb)
+- **Configuration** files (.json, .yaml, .toml)
+- **Documentation** (.md, .txt)
+
+## 📋 Interface Overview
+
+### 🔧 Sidebar Features
+- **Ollama Status** - Real-time connection status
+- **Model Information** - Currently active model
+- **Setup Instructions** - Help for first-time users
+
+### 📊 Analysis Tabs
+1. **📁 File Structure** - Visual breakdown and file type distribution
+2. **📄 File Explanations** - Searchable, categorized file explanations
+3. **🤖 AI Insights** - Overall project analysis and recommendations
+4. **⚙️ Technologies** - Detected tech stack and key files
+
+## ⚙️ Configuration
+
+### Ollama Models
+
+Choose the right model for your needs:
+
+| Model | Size | Speed | Quality | Best For |
+|-------|------|-------|---------|----------|
+| `llama3.2:3b` | 2GB | Fast | Good | Quick analysis, demos |
+| `llama3.2:7b` | 4GB | Medium | Better | Detailed analysis |
+| `codellama:7b` | 4GB | Medium | Code-focused | Programming projects |
+
+### System Requirements
+
+**Minimum:**
+- 8GB RAM
+- 5GB free disk space
+- Python 3.8+
+
+**Recommended:**
+- 16GB RAM (for 7b models)
+- 10GB free disk space
+- SSD storage
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**1. "Ollama not available"**
+```bash
+# Check if Ollama is running
+ollama list
+
+# If not, start it
+ollama serve
+```
+
+**2. "Model not found"**
+```bash
+# Pull the default model
+ollama pull llama3.2:3b
+```
+
+**3. "Analysis failed"**
+- Ensure the repository is public
+- Check your internet connection for cloning
+- Try a smaller repository first
+
+**4. "Port already in use"**
+```bash
+# Use a different port
+streamlit run app.py --server.port 8502
 ```
 
 ## 🏗️ Architecture
 
-### System Components
-
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Streamlit UI                           │
-└─────────────────────────────────────────────────────────────┘
-                               │
-┌─────────────────────────────────────────────────────────────┐
-│                      FastAPI Server                         │
-└─────────────────────────────────────────────────────────────┘
-                               │
-┌─────────────────────────────────────────────────────────────┐
-│                   Orchestrator Agent                        │
-│  ┌──────────┬──────────┬──────────┬──────────┐           │
-│  │Document  │ Image    │ Graph    │ Realtime │           │
-│  │Agent     │ Agent    │ Agent    │ Agent    │           │
-│  └──────────┴──────────┴──────────┴──────────┘           │
-└─────────────────────────────────────────────────────────────┘
-                               │
-┌─────────────────────────────────────────────────────────────┐
-│                    Storage Layer                            │
-│  ┌──────────┬──────────┬──────────┐                      │
-│  │Pinecone  │ Neo4j    │ Redis    │                      │
-│  │Vectors   │ Graph    │ Cache    │                      │
-│  └──────────┴──────────┴──────────┘                      │
-└─────────────────────────────────────────────────────────────┘
+code_analyzer/
+├── app.py                 # Main Streamlit application
+├── requirements.txt       # Python dependencies
+├── README.md             # This file
+└── LICENSE               # MIT license
 ```
 
-### Agent Responsibilities
+### Key Components
 
-1. **DocumentAgent**: Processes NASA papers, technical reports, and documentation
-2. **ImageAgent**: Handles space imagery using CLIP embeddings and vision models
-3. **GraphAgent**: Manages entity relationships (missions, astronauts, celestial bodies)
-4. **RealtimeAgent**: Integrates live data (ISS position, NEOs, Mars weather)
-5. **OrchestratorAgent**: Routes queries and synthesizes multi-agent responses
-
-## 🧪 Testing
-
-### Run Unit Tests
-```bash
-pytest tests/ -v --cov=.
-```
-
-### Run Integration Tests
-```bash
-pytest tests/test_integration.py -v
-```
-
-### Run Evaluation Benchmark
-```bash
-# Via API
-curl -X POST "http://localhost:8000/evaluate"
-
-# Via Python
-python -m evaluation.evaluator
-```
-
-## 📊 Monitoring & Observability
-
-### Prometheus Metrics
-- Query latency by agent
-- Cache hit rates
-- Error rates
-- Active queries
-- Agent-specific metrics
-
-### Structured Logging
-All logs are in JSON format with correlation IDs for request tracing.
-
-### Grafana Dashboards
-Import dashboards from `monitoring/grafana/dashboards/`
-
-## 🔧 Configuration
-
-### Key Configuration Files
-- `config.yaml`: System configuration
-- `.env`: Environment variables and API keys
-- `docker-compose.yml`: Service orchestration
-
-### Performance Tuning
-```yaml
-# config.yaml
-retrieval:
-  top_k: 20              # Initial retrieval count
-  rerank_top_k: 5        # Final result count
-  hybrid:
-    vector_weight: 0.7   # Vector search weight
-    keyword_weight: 0.2  # Keyword search weight
-    graph_weight: 0.1    # Graph search weight
-
-cache:
-  ttl: 3600             # Cache TTL in seconds
-  max_size: 1000        # Maximum cache entries
-```
-
-## 📈 Performance Optimization
-
-### 1. Embedding Caching
-The system automatically caches embeddings in Redis to avoid recomputation.
-
-### 2. Batch Processing
-```python
-# Process documents in batches
-await document_agent.process_documents(
-    documents=large_document_list,
-    batch_size=100
-)
-```
-
-### 3. Async Operations
-All I/O operations are async for maximum concurrency.
-
-### 4. Connection Pooling
-Neo4j and Redis connections are pooled for efficiency.
-
-## 🚢 Production Deployment
-
-### Using Docker Compose
-```bash
-# Production deployment
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-
-# Scale specific services
-docker-compose up -d --scale mseis-app=3
-```
-
-### Kubernetes Deployment
-```yaml
-# k8s/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: mseis
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: mseis
-  template:
-    metadata:
-      labels:
-        app: mseis
-    spec:
-      containers:
-      - name: mseis
-        image: mseis:latest
-        ports:
-        - containerPort: 8000
-        env:
-        - name: ENVIRONMENT
-          value: "production"
-        resources:
-          requests:
-            memory: "2Gi"
-            cpu: "1000m"
-          limits:
-            memory: "4Gi"
-            cpu: "2000m"
-```
-
-### Environment Variables for Production
-```bash
-ENVIRONMENT=production
-LOG_LEVEL=INFO
-MAX_WORKERS=8
-RATE_LIMIT_CALLS=1000
-RATE_LIMIT_PERIOD=3600
-```
-
-## 🔒 Security Considerations
-
-1. **API Key Management**: Use environment variables or secret management systems
-2. **Rate Limiting**: Configured per endpoint to prevent abuse
-3. **Input Validation**: All inputs are validated using Pydantic models
-4. **CORS Configuration**: Restricted to allowed origins in production
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **Pinecone Connection Error**
-   ```bash
-   # Check Pinecone status
-   curl https://status.pinecone.io/api/v2/status.json
-   ```
-
-2. **Neo4j Connection Failed**
-   ```bash
-   # Check Neo4j logs
-   docker logs mseis-neo4j
-   ```
-
-3. **Out of Memory**
-   - Reduce batch sizes in config.yaml
-   - Increase Docker memory limits
-
-### Debug Mode
-```bash
-# Enable debug logging
-export LOG_LEVEL=DEBUG
-python main.py
-```
-
-## 📚 Advanced Usage
-
-### Adding New Data Sources
-
-1. Create a new loader in `data_sources/`:
-```python
-# data_sources/custom_loader.py
-class CustomSpaceDataLoader:
-    async def load_data(self) -> List[Document]:
-        # Implementation
-        pass
-```
-
-2. Integrate with appropriate agent:
-```python
-# In document_agent.py
-from data_sources.custom_loader import CustomSpaceDataLoader
-
-loader = CustomSpaceDataLoader()
-documents = await loader.load_data()
-await self.process_documents(documents)
-```
-
-### Custom Evaluation Metrics
-
-Add custom metrics to `evaluation/metrics.py`:
-```python
-class CustomMetrics:
-    @staticmethod
-    def space_accuracy(prediction: str, ground_truth: str) -> float:
-        # Custom metric implementation
-        pass
-```
-
-### Extending Agents
-
-Create a new agent by extending BaseAgent:
-```python
-from agents.base_agent import BaseAgent
-
-class CustomAgent(BaseAgent):
-    async def _setup(self):
-        # Initialize agent components
-        pass
-        
-    async def _process_query(self, context: QueryContext):
-        # Process queries
-        pass
-```
+- **RepositoryAnalyzer**: Core analysis engine
+- **File Processors**: Extract imports, functions, classes
+- **AI Integration**: Ollama communication layer
+- **UI Components**: Streamlit interface
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Contributions are welcome! Here's how you can help:
 
-## 📄 License
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Commit changes**: `git commit -m 'Add amazing feature'`
+4. **Push to branch**: `git push origin feature/amazing-feature`
+5. **Open a Pull Request**
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+### Development Setup
+
+```bash
+# Clone your fork
+git clone https://github.com/yourusername/code_analyzer.git
+
+# Install in development mode
+pip install -e .
+
+# Run tests (if available)
+pytest
+```
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- NASA for providing open APIs and data
-- OpenAI for GPT-4 and embeddings
-- Pinecone for vector database
-- Neo4j for graph database
-- The open-source community for amazing tools
+- **Ollama** for providing free local LLM infrastructure
+- **Streamlit** for the amazing web framework
+- **The open source community** for inspiration and tools
 
-## 📮 Support
+## 📊 Statistics
 
-- Documentation: [Link to full docs]
-- Issues: [GitHub Issues]
-- Discussions: [GitHub Discussions]
-- Email: support@mseis.example.com
+- 🎯 **0 API Costs** - Completely free to run
+- ⚡ **~30-60 seconds** average analysis time
+- 🔍 **20+ file types** supported
+- 🧠 **Multiple AI models** available
+
+## 🔗 Links
+
+- [Ollama Installation](https://ollama.ai/)
+- [Streamlit Documentation](https://docs.streamlit.io/)
+- [Report Issues](https://github.com/yourusername/code_analyzer/issues)
 
 ---
 
-Built with ❤️ for space exploration enthusiasts and AI researchers
+Made with ❤️ for the developer community. Analyze any repository, understand any codebase, completely free!

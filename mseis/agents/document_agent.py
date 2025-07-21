@@ -4,10 +4,10 @@ import asyncio
 from datetime import datetime
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.chains import RetrievalQA
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 
 from agents.base_agent import BaseAgent, QueryContext
 from storage.pinecone_manager import PineconeManager

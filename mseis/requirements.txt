@@ -16,7 +16,7 @@ torch>=2.6.0
 torchvision>=0.17.0
 
 # Vector Databases (flexible versions)
-pinecone-client>=4.0.0
+pinecone>=3.0.0
 faiss-cpu>=1.7.0
 
 # Graph Database
@@ -40,13 +40,14 @@ redis>=5.0.0
 diskcache>=5.0.0
 cachetools>=5.0.0
 
-# Data Processing
+# Data Processing and Advanced Analytics
 numpy>=1.24.0
 scikit-learn>=1.3.0
+scipy>=1.11.0
 beautifulsoup4>=4.12.0
 pillow>=10.0.0
 
-# Code Analysis
+# Code Analysis and Graph Processing
 GitPython>=3.1.0
 networkx>=3.0.0
 
@@ -62,4 +63,8 @@ pytest-mock>=3.12.0
 
 # Utilities
 click>=8.0.0
-tqdm>=4.60.0 
+tqdm>=4.60.0
+
+# Free LLM Integration (Ollama support)
+aiohttp>=3.8.0
+aiofiles>=23.0.0

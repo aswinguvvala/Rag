@@ -181,22 +181,46 @@ class MetricsCollector:
 
 # Prometheus metrics support
 try:
-    from prometheus_client import Counter, Histogram, Gauge, start_http_server
+    from prometheus_client import Counter, Histogram, Gauge, start_http_server, REGISTRY
     
-    # Prometheus metrics
-    REQUEST_COUNT = Counter('mseis_requests_total', 'Total requests', ['component', 'operation'])
-    REQUEST_DURATION = Histogram('mseis_request_duration_seconds', 'Request duration', ['component', 'operation'])
-    ACTIVE_REQUESTS = Gauge('mseis_active_requests', 'Active requests', ['component'])
-    ERROR_COUNT = Counter('mseis_errors_total', 'Total errors', ['component', 'operation'])
+    # Prometheus metrics - handle duplicates gracefully
+    REQUEST_COUNT = None
+    REQUEST_DURATION = None
+    ACTIVE_REQUESTS = None
+    ERROR_COUNT = None
+    
+    try:
+        REQUEST_COUNT = Counter('mseis_requests_total', 'Total requests', ['component', 'operation'])
+        REQUEST_DURATION = Histogram('mseis_request_duration_seconds', 'Request duration', ['component', 'operation'])
+        ACTIVE_REQUESTS = Gauge('mseis_active_requests', 'Active requests', ['component'])
+        ERROR_COUNT = Counter('mseis_errors_total', 'Total errors', ['component', 'operation'])
+    except ValueError as e:
+        # Metrics already registered, try to get existing ones
+        if "Duplicated timeseries" in str(e):
+            # Get existing metrics from registry
+            for collector in list(REGISTRY._collector_to_names.keys()):
+                if hasattr(collector, '_name'):
+                    if collector._name == 'mseis_requests_total':
+                        REQUEST_COUNT = collector
+                    elif collector._name == 'mseis_request_duration_seconds':
+                        REQUEST_DURATION = collector
+                    elif collector._name == 'mseis_active_requests':
+                        ACTIVE_REQUESTS = collector
+                    elif collector._name == 'mseis_errors_total':
+                        ERROR_COUNT = collector
+        else:
+            raise e
     
     PROMETHEUS_AVAILABLE = True
     
     def update_prometheus_metrics(component: str, operation: str, execution_time: float, success: bool = True):
         """Update Prometheus metrics"""
-        REQUEST_COUNT.labels(component=component, operation=operation).inc()
-        REQUEST_DURATION.labels(component=component, operation=operation).observe(execution_time)
+        if REQUEST_COUNT:
+            REQUEST_COUNT.labels(component=component, operation=operation).inc()
+        if REQUEST_DURATION:
+            REQUEST_DURATION.labels(component=component, operation=operation).observe(execution_time)
         
-        if not success:
+        if not success and ERROR_COUNT:
             ERROR_COUNT.labels(component=component, operation=operation).inc()
     
     def start_metrics_server(port: int = 8000):

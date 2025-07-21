@@ -1,8 +1,12 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# C extensions
 *.so
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -16,74 +20,173 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
 
-# Virtual Environments
-hybrid_venv/
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
+# PyInstaller
+*.manifest
+*.spec
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Cache
-web_cache/
-*.pkl
-*.bin
-.cache/
-rag_data/
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
 
-# Logs
-logs/
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
 *.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
 
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Flask stuff:
+instance/
+.webassets-cache
 
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# Streamlit
+.streamlit/
+
 # Temporary files
 *.tmp
 *.temp
-temp/
-tmp/
+/tmp/
 
-# Storage
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Project specific - IntelliSearch
+web_cache/
 storage/
-mseis/storage/
-
-# FAISS indexes
+logs/
 *.index
-*.faiss
-
-# Model files (if large)
+*.pkl
+faiss_index/
 models/
-*.bin
-*.safetensors
+data/
+*.json
+*.csv
+streamlit_optimized_clean.log
 
-# Streamlit
-.streamlit/ 
+# Legacy files to exclude
+COSMIC_INTELLIGENCE.md
+COMPLETE_SYSTEM_DOCUMENTATION.md
+COMPREHENSIVE_DOCUMENTATION.md
+HYBRID_RAG_DOCUMENTATION.md
+MSEIS_COMPLETE_FEATURES_GUIDE.md
+PROJECT_COMPLETION_SUMMARY.md
+PROJECT_DOCUMENTATION.md
+SKILLS_AND_TOOLS_SUMMARY.md
+TECHNICAL_SKILLS_ANALYSIS.md
+TESTING_GUIDE.md
+agents/
+code_intelligence_demo.py
+confidence_evaluator.py
+hybrid_rag_system.py
+hybrid_requirements.txt
+llm_integration.py
+mseis_master_demo.py
+mseis_streamlit.py
+rag_server.py
+run_mseis.py
+search_failure_analysis.md
+setup_hybrid_system.py
+system_flow_analysis.md
+system_observatory_dashboard.py
+test_fixes.py
+test_improved_rag.py
+true_rag_system.py
+web_search_manager.py
+cosmic_space_rag_app.py
+cosmic_space_rag_app_light.py
+cosmic_space_rag_app_optimized.py
+space_article_generator.py
+space_articles_database.json
+space_rag_app.py
+professional_rag_system.py
+simple_space_rag_app.py
