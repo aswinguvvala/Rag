@@ -5,6 +5,3 @@ aiohttp
 openai
 python-dotenv
 requests
-transformers
-torch
-scikit-learn
