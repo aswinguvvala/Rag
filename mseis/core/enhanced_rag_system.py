@@ -9,18 +9,53 @@ import asyncio
 from typing import Dict, List, Any, Optional, Tuple
 import time
 
-from core.rag_pipeline import RAGPipeline  
-from core.web_search import WebSearchManager
-from utils.logging_config import get_logger
+try:
+    from core.rag_pipeline import RAGPipeline  
+    RAG_PIPELINE_AVAILABLE = True
+except ImportError as e:
+    RAG_PIPELINE_AVAILABLE = False
+    RAG_PIPELINE_ERROR = str(e)
 
-logger = get_logger(__name__)
+try:
+    from core.simple_rag_fallback import SimpleRAGFallback
+    SIMPLE_RAG_AVAILABLE = True
+except ImportError:
+    SIMPLE_RAG_AVAILABLE = False
+
+try:
+    from core.web_search import WebSearchManager
+    WEB_SEARCH_AVAILABLE = True
+except ImportError:
+    WEB_SEARCH_AVAILABLE = False
+
+try:
+    from utils.logging_config import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
 
 class EnhancedRAGSystem:
     """Complete RAG system with local similarity search and web fallback"""
     
     def __init__(self):
-        self.rag_pipeline = RAGPipeline()
-        self.web_search = WebSearchManager()
+        # Try to initialize full RAG pipeline, fallback to simple if needed
+        if RAG_PIPELINE_AVAILABLE:
+            self.rag_pipeline = RAGPipeline()
+            self.rag_mode = "full"
+        elif SIMPLE_RAG_AVAILABLE:
+            self.rag_pipeline = SimpleRAGFallback()
+            self.rag_mode = "simple"
+        else:
+            self.rag_pipeline = None
+            self.rag_mode = "none"
+        
+        # Web search manager
+        if WEB_SEARCH_AVAILABLE:
+            self.web_search = WebSearchManager()
+        else:
+            self.web_search = None
+            
         self.is_initialized = False
         
         # Configuration
@@ -32,16 +67,19 @@ class EnhancedRAGSystem:
     async def initialize(self):
         """Initialize the complete RAG system"""
         try:
-            logger.info("Initializing Enhanced RAG System...")
+            logger.info(f"Initializing Enhanced RAG System in {self.rag_mode} mode...")
             
-            # Initialize RAG pipeline
-            success = await self.rag_pipeline.initialize()
-            if not success:
-                logger.error("Failed to initialize RAG pipeline")
-                return False
+            # Initialize RAG pipeline if available
+            if self.rag_pipeline:
+                success = await self.rag_pipeline.initialize()
+                if not success:
+                    logger.error(f"Failed to initialize RAG pipeline in {self.rag_mode} mode")
+                    return False
+            else:
+                logger.warning("No RAG pipeline available - running in minimal mode")
             
             self.is_initialized = True
-            logger.info("Enhanced RAG System initialized successfully")
+            logger.info(f"Enhanced RAG System initialized successfully in {self.rag_mode} mode")
             return True
             
         except Exception as e:
@@ -84,14 +122,26 @@ class EnhancedRAGSystem:
             if not self.is_initialized:
                 await self.initialize()
             
-            logger.info(f"Processing query: '{user_question}'")
+            logger.info(f"Processing query: '{user_question}' in {self.rag_mode} mode")
             
-            # Phase 1: Search local database
-            local_results, has_similar_docs = await self.rag_pipeline.search_similar_documents(
-                query=user_question,
-                top_k=self.max_local_results,
-                threshold=self.similarity_threshold
-            )
+            # Phase 1: Search local database (method differs by mode)
+            if self.rag_pipeline:
+                if self.rag_mode == "full":
+                    local_results, has_similar_docs = await self.rag_pipeline.search_similar_documents(
+                        query=user_question,
+                        top_k=self.max_local_results,
+                        threshold=self.similarity_threshold
+                    )
+                elif self.rag_mode == "simple":
+                    query_result = await self.rag_pipeline.query(user_question, self.max_local_results)
+                    local_results = query_result.get('local_results', [])
+                    has_similar_docs = query_result.get('has_similar', False)
+                else:
+                    local_results = []
+                    has_similar_docs = False
+            else:
+                local_results = []
+                has_similar_docs = False
             
             web_results = None
             search_strategy = "local_database"

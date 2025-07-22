@@ -1271,6 +1271,10 @@ class IntelliSearch:
                             <p><strong>To fix:</strong> Install required dependencies</p>
                             <code>pip install sentence-transformers transformers torch faiss-cpu chromadb</code>
                         </div>
+                        <div class="error-debug">
+                            <p><strong>Debug Info:</strong></p>
+                            <code style="color: #ff6b6b; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; display: block; white-space: pre-wrap;">""" + str(IMPORT_ERROR if 'IMPORT_ERROR' in globals() else 'Import error details not available') + """</code>
+                        </div>
                         <div class="error-note">
                             The beautiful space interface works, but search functionality needs these packages.
                         </div>
