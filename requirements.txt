@@ -1,35 +1,39 @@
-# Streamlit Cloud Compatible Requirements
-# Optimized for Python 3.12.7 deployment
+# Streamlit Cloud Optimized Requirements
+# Python 3.11.10 Compatible - Pre-compiled wheels only
+
+# Build essentials (Python 3.11+ distutils replacement)
+setuptools>=69.0.0
+wheel>=0.42.0
 
 # Core Streamlit
 streamlit>=1.41.0
 
-# Essential AI/ML (with version constraints for stability)
+# AI/ML Core (stable versions with wheels) - OPTIONAL
 openai>=1.97.0,<2.0.0
-sentence-transformers>=3.0.0,<6.0.0
-torch>=2.6.0,<3.0.0
-transformers>=4.30.0,<5.0.0
 
-# Core Data Processing
-numpy>=2.0.0,<3.0.0
+# Core Data Processing (essential only)
+numpy>=1.24.0,<2.0.0
 pandas>=2.0.0,<3.0.0
-pydantic>=2.11.0,<3.0.0
+pydantic>=2.10.0,<3.0.0
 
-# Vector Storage (cloud-optimized)
-faiss-cpu>=1.9.0
-chromadb>=1.0.0
+# HTTP and Configuration (required)
+aiohttp>=3.9.0,<4.0.0
+requests>=2.31.0,<3.0.0
+python-dotenv>=1.0.0,<2.0.0
+pyyaml>=6.0.0,<7.0.0
 
-# HTTP and Configuration
-aiohttp>=3.11.0
-httpx>=0.28.0
-requests>=2.32.0
-python-dotenv>=1.1.0
-pyyaml>=6.0.0
+# Utilities (lightweight)
+tqdm>=4.65.0,<5.0.0
+python-dateutil>=2.8.0,<3.0.0
 
-# Utilities
-tqdm>=4.67.0
-tenacity>=9.1.0
-python-dateutil>=2.9.0
+# Optional AI dependencies (will be imported conditionally)
+sentence-transformers>=3.0.0,<4.0.0; python_version>="3.8"
+torch>=2.4.0,<2.6.0; python_version>="3.8"
+transformers>=4.30.0,<5.0.0; python_version>="3.8"
+faiss-cpu>=1.8.0,<1.9.0; python_version>="3.8"
+tenacity>=8.2.0,<10.0.0
+diskcache>=5.6.0,<6.0.0
 
-# Caching (lightweight)
-diskcache>=5.6.0
+# Additional dependencies for full functionality (conditional)
+chromadb>=0.4.0,<0.6.0; python_version>="3.8"
+httpx>=0.27.0,<1.0.0

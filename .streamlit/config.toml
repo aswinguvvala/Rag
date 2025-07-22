@@ -1,14 +1,36 @@
+[global]
+developmentMode = false
+
 [server]
 headless = true
-port = 8501
 enableCORS = false
 enableXsrfProtection = false
+maxUploadSize = 200
+runOnSave = false
+fileWatcherType = "none"
 
 [browser]
 gatherUsageStats = false
+showErrorDetails = true
 
 [theme]
-primaryColor = "#FF4B4B"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
-textColor = "#262730"
+primaryColor = "#00ff88"
+backgroundColor = "#0f0f1e"
+secondaryBackgroundColor = "#1a1a2e"
+textColor = "#e1e8ed"
+
+# Timeout settings for Streamlit Cloud
+[runner]
+magicEnabled = false
+fastReruns = true
+enforceSerializableSessionState = false
+
+# Memory optimization
+[logger]
+level = "error"
+messageFormat = "%(asctime)s %(message)s"
+
+# Performance settings
+[client]
+caching = true
+toolbarMode = "minimal"
