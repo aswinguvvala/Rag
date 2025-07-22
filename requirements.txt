@@ -1,24 +1,35 @@
-# Build system requirements (must be first)
-setuptools>=65.0.0
-wheel>=0.37.0
-pip>=22.0.0
+# Streamlit Cloud Compatible Requirements
+# Optimized for Python 3.12.7 deployment
 
-# Core app dependencies  
-streamlit==1.31.1
-numpy==1.24.4
-aiohttp==3.8.6
-openai==1.12.0
-python-dotenv==1.0.0
-requests==2.31.0
-pydantic==2.5.0
-PyYAML==6.0.1
+# Core Streamlit
+streamlit>=1.41.0
 
-# ML dependencies with known Python 3.11 wheels
-torch==2.1.0
-transformers==4.36.0
-sentence-transformers==2.2.2
-scikit-learn==1.3.2
+# Essential AI/ML (with version constraints for stability)
+openai>=1.97.0,<2.0.0
+sentence-transformers>=3.0.0,<6.0.0
+torch>=2.6.0,<3.0.0
+transformers>=4.30.0,<5.0.0
 
-# Optional ML dependencies (comment out if causing issues)
-faiss-cpu==1.7.4
-chromadb==0.4.15
+# Core Data Processing
+numpy>=2.0.0,<3.0.0
+pandas>=2.0.0,<3.0.0
+pydantic>=2.11.0,<3.0.0
+
+# Vector Storage (cloud-optimized)
+faiss-cpu>=1.9.0
+chromadb>=1.0.0
+
+# HTTP and Configuration
+aiohttp>=3.11.0
+httpx>=0.28.0
+requests>=2.32.0
+python-dotenv>=1.1.0
+pyyaml>=6.0.0
+
+# Utilities
+tqdm>=4.67.0
+tenacity>=9.1.0
+python-dateutil>=2.9.0
+
+# Caching (lightweight)
+diskcache>=5.6.0
