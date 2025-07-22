@@ -1,0 +1,49 @@
+# Working Requirements for IntelliSearch Chat Interface
+# This file contains the minimum dependencies needed for the chat interface to work
+
+# Core Streamlit and Web Framework
+streamlit>=1.41.0
+aiohttp>=3.11.0
+fastapi>=0.116.0
+uvicorn>=0.35.0
+
+# AI and ML Core
+sentence-transformers>=5.0.0
+openai>=1.97.0
+transformers>=4.30.0
+torch>=2.6.0
+
+# Vector Storage and Search
+faiss-cpu>=1.9.0
+chromadb>=1.0.0
+pinecone>=7.3.0
+
+# Data Processing
+numpy>=2.3.0
+pandas>=2.0.0
+pydantic>=2.11.0
+
+# Logging and Configuration
+structlog>=25.4.0
+python-dotenv>=1.1.0
+pyyaml>=6.0.0
+
+# Database and Caching
+redis>=6.2.0
+diskcache>=5.6.0
+neo4j>=5.28.0
+
+# Async and HTTP
+httpx>=0.28.0
+requests>=2.32.0
+aiofiles>=23.0.0
+
+# Utilities
+tqdm>=4.67.0
+click>=8.2.0
+tenacity>=9.1.0
+python-dateutil>=2.9.0
+
+# Optional: Development and Testing
+pytest>=7.4.0
+pytest-asyncio>=0.23.0
