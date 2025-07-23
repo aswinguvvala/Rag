@@ -21,12 +21,15 @@ mseis_dir = current_dir / "mseis"
 sys.path.insert(0, str(mseis_dir))
 
 try:
-    from core.enhanced_rag_system import EnhancedRAGSystem
+    from core.enhanced_rag_system_v2 import EnhancedRAGSystemV2
+    RAG_SYSTEM = EnhancedRAGSystemV2()
     RAG_AVAILABLE = True
+    RAG_ERROR = None
 except ImportError as e:
     # Handle graceful degradation
+    RAG_SYSTEM = None
     RAG_AVAILABLE = False
-    IMPORT_ERROR = str(e)
+    RAG_ERROR = str(e)
 
 # Load environment variables
 load_dotenv()
@@ -74,7 +77,7 @@ st.markdown("""
             0 0 120px rgba(255, 107, 0, 0.3),
             0 0 160px rgba(255, 69, 0, 0.1);
         pointer-events: none;
-        z-index: 1;
+        z-index: -1;
         animation: sunPulse 6s ease-in-out infinite alternate;
     }
     
@@ -99,7 +102,7 @@ st.markdown("""
         top: 50%;
         left: 50%;
         pointer-events: none;
-        z-index: 1;
+        z-index: -1;
     }
 
     /* Mercury */
@@ -219,7 +222,7 @@ st.markdown("""
         background-repeat: repeat;
         background-size: 500px 200px;
         pointer-events: none;
-        z-index: 0;
+        z-index: -2;
         opacity: 0.6;
         animation: starTwinkle 8s ease-in-out infinite alternate;
     }
@@ -282,21 +285,33 @@ st.markdown("""
     /* Enhanced Input Styling */
     .stTextInput {
         width: 100% !important;
+        position: relative !important;
+        z-index: 100 !important;
+    }
+    
+    .stTextInput > div {
+        position: relative !important;
+        z-index: 100 !important;
     }
     
     .stTextInput input {
-        background: rgba(15, 15, 35, 0.85) !important;
-        border: 2px solid rgba(100, 255, 218, 0.3) !important;
+        background: rgba(15, 15, 35, 0.95) !important;
+        border: 2px solid rgba(100, 255, 218, 0.4) !important;
         border-radius: 25px !important;
         color: #f8fafc !important;
-        padding: 1.5rem 5rem 1.5rem 4rem !important;
+        padding: 1.5rem 2rem 1.5rem 2rem !important;
         font-size: 1.25rem !important;
         font-weight: 500 !important;
         font-family: 'Inter', sans-serif !important;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
         backdrop-filter: blur(20px) !important;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
         text-align: left !important;
+        position: relative !important;
+        z-index: 100 !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
     
     .stTextInput input:focus {
@@ -323,6 +338,16 @@ st.markdown("""
     }
     
     /* Enhanced Button Styling */
+    .stButton {
+        position: relative !important;
+        z-index: 100 !important;
+    }
+    
+    .stButton > div {
+        position: relative !important;
+        z-index: 100 !important;
+    }
+    
     .stButton button {
         background: linear-gradient(135deg, 
             rgba(0, 255, 136, 0.9) 0%, 
@@ -345,6 +370,10 @@ st.markdown("""
         position: relative !important;
         overflow: hidden !important;
         backdrop-filter: blur(10px) !important;
+        z-index: 100 !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
     
     .stButton button:hover {
@@ -409,6 +438,39 @@ st.markdown("""
         border-left: 6px solid #00ff88;
     }
     
+    /* Enhanced Response Type Styling */
+    .ai-response.semantic {
+        border-color: rgba(138, 43, 226, 0.4);
+        border-left-color: #8a2be2;
+        box-shadow: 
+            0 15px 50px rgba(0, 0, 0, 0.4),
+            0 0 80px rgba(138, 43, 226, 0.2);
+    }
+    
+    .ai-response.vector {
+        border-color: rgba(255, 165, 0, 0.4);
+        border-left-color: #ffa500;
+        box-shadow: 
+            0 15px 50px rgba(0, 0, 0, 0.4),
+            0 0 80px rgba(255, 165, 0, 0.2);
+    }
+    
+    .ai-response.web {
+        border-color: rgba(30, 144, 255, 0.4);
+        border-left-color: #1e90ff;
+        box-shadow: 
+            0 15px 50px rgba(0, 0, 0, 0.4),
+            0 0 80px rgba(30, 144, 255, 0.2);
+    }
+    
+    .ai-response.basic {
+        border-color: rgba(255, 193, 7, 0.4);
+        border-left-color: #ffc107;
+        box-shadow: 
+            0 15px 50px rgba(0, 0, 0, 0.4),
+            0 0 80px rgba(255, 193, 7, 0.2);
+    }
+    
     .ai-response-header {
         font-size: 1.5rem;
         font-weight: 600;
@@ -424,6 +486,113 @@ st.markdown("""
         line-height: 1.8;
         font-size: 1.125rem;
         font-weight: 400;
+    }
+    
+    /* Response Metrics Styling */
+    .response-footer {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(100, 255, 218, 0.2);
+    }
+    
+    .response-metrics {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .response-metrics .metric {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.5rem 1rem;
+        border-radius: 15px;
+        font-size: 0.9rem;
+        color: #cbd5e0;
+        border: 1px solid rgba(100, 255, 218, 0.2);
+    }
+    
+    .powered-by {
+        font-size: 0.9rem;
+        color: #a0aec0;
+        font-style: italic;
+        text-align: center;
+        display: block;
+    }
+    
+    /* Search Strategy Indicators */
+    .search-strategy {
+        margin: 1.5rem 0;
+        text-align: center;
+    }
+    
+    .strategy-indicator {
+        background: rgba(15, 15, 35, 0.8);
+        border: 1px solid rgba(100, 255, 218, 0.3);
+        border-radius: 20px;
+        padding: 1.5rem 2rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 1rem;
+        backdrop-filter: blur(15px);
+        transition: all 0.3s ease;
+    }
+    
+    .strategy-indicator:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .strategy-icon {
+        font-size: 1.5rem;
+    }
+    
+    .strategy-text {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #f1f5f9;
+    }
+    
+    .result-count {
+        color: #00ff88;
+        font-weight: 600;
+    }
+    
+    .strategy-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        width: 100%;
+        border-radius: 0 0 20px 20px;
+        background: linear-gradient(90deg, transparent, #00ff88, transparent);
+        animation: progressBar 2s ease-in-out;
+    }
+    
+    .vector-bar {
+        background: linear-gradient(90deg, transparent, #ffa500, transparent);
+    }
+    
+    .web-bar {
+        background: linear-gradient(90deg, transparent, #1e90ff, transparent);
+    }
+    
+    .basic-bar {
+        background: linear-gradient(90deg, transparent, #ffc107, transparent);
+    }
+    
+    @keyframes progressBar {
+        0% { width: 0%; }
+        100% { width: 100%; }
+    }
+    
+    /* Result Meta Information */
+    .result-meta {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(100, 255, 218, 0.2);
+        font-size: 0.9rem;
+        color: #a0aec0;
+        font-style: italic;
     }
     
     /* Basic Mode Styling */
@@ -535,7 +704,7 @@ st.markdown("""
         padding: 4rem 2rem 3rem 2rem;
         margin-bottom: 2rem;
         position: relative;
-        z-index: 10;
+        z-index: 50;
     }
     
     .app-title {
@@ -681,23 +850,44 @@ st.markdown("""
     .query-container {
         padding: 2rem 0;
         position: relative;
-        z-index: 10;
+        z-index: 200;
+        background: transparent;
     }
     
     .query-wrapper {
         max-width: 800px;
         margin: 0 auto;
         position: relative;
+        z-index: 200;
+        background: rgba(15, 15, 35, 0.7);
+        padding: 3rem;
+        border-radius: 30px;
+        border: 1px solid rgba(100, 255, 218, 0.2);
+        backdrop-filter: blur(30px);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     }
     
-    .search-icon {
-        position: absolute;
-        left: 1.5rem;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 1.5rem;
-        z-index: 20;
-        pointer-events: none;
+    /* Make sure all content is visible */
+    .stApp > div:first-child {
+        position: relative;
+        z-index: 10;
+    }
+    
+    /* Ensure main content container is above background */
+    .main {
+        position: relative;
+        z-index: 100;
+    }
+    
+    /* Force visibility of search elements */
+    .stTextInput, .stButton, .stExpander {
+        position: relative !important;
+        z-index: 300 !important;
+    }
+    
+    .stTextInput > div, .stButton > div, .stExpander > div {
+        position: relative !important;
+        z-index: 300 !important;
     }
 
     /* Hide Streamlit elements */
@@ -892,13 +1082,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 class IntelliSearch:
-    """Enhanced Professional RAG System with Advanced UI"""
+    """Enhanced Professional RAG System with Advanced UI - Streamlit Cloud Optimized"""
     
     def __init__(self):
-        self.rag_system = None
+        self.rag_system = RAG_SYSTEM
         self.ollama_available = False
         self.openai_client = None
         self.is_initialized = False
+        self.system_status = None
         
         # Enhanced system configuration
         self.similarity_threshold = 0.4
@@ -916,11 +1107,47 @@ class IntelliSearch:
             'response_tokens': 0
         }
         
+        # Streamlit Cloud optimizations
+        self.cache_enabled = True
+        self.max_cache_size = 100  # Limit cache size for memory management
+        self.response_cache = {}
+        self.initialization_cache = {}
+        
         self.setup_llm()
     
     def count_tokens(self, text: str) -> int:
         """Simple token counting approximation (1 token ≈ 4 characters)"""
         return len(text) // 4 if text else 0
+    
+    def _manage_cache_memory(self):
+        """Manage cache size to prevent memory issues on Streamlit Cloud"""
+        if len(self.response_cache) > self.max_cache_size:
+            # Remove oldest entries (simple FIFO cache management)
+            cache_keys = list(self.response_cache.keys())
+            for key in cache_keys[:len(cache_keys)//2]:  # Remove half of cache
+                del self.response_cache[key]
+            logger.info(f"Cache cleaned: reduced to {len(self.response_cache)} entries")
+    
+    def _get_cached_response(self, query: str) -> Optional[Dict[str, Any]]:
+        """Get cached response for query if available"""
+        if not self.cache_enabled:
+            return None
+        
+        cache_key = query.lower().strip()
+        if cache_key in self.response_cache:
+            logger.info(f"Cache hit for query: {query[:50]}...")
+            return self.response_cache[cache_key]
+        return None
+    
+    def _cache_response(self, query: str, response: Dict[str, Any]):
+        """Cache response for future use"""
+        if not self.cache_enabled:
+            return
+        
+        self._manage_cache_memory()
+        cache_key = query.lower().strip()
+        self.response_cache[cache_key] = response
+        logger.info(f"Response cached for query: {query[:50]}...")
         
     def update_token_metrics(self, query: str, response: str):
         """Update token usage metrics"""
@@ -944,16 +1171,16 @@ class IntelliSearch:
             self.openai_client = openai.OpenAI(api_key=openai_key)
     
     async def initialize_rag_system(self):
-        """Initialize the RAG system"""
-        if not RAG_AVAILABLE:
+        """Initialize the enhanced RAG system V2"""
+        if not RAG_AVAILABLE or not self.rag_system:
             return False
             
         try:
-            if not self.rag_system:
-                self.rag_system = EnhancedRAGSystem()
-                
+            # Initialize the RAG system
             success = await self.rag_system.initialize()
+            
             if success:
+                # Configure the system
                 self.rag_system.configure(
                     similarity_threshold=self.similarity_threshold,
                     enable_web_fallback=self.enable_web_fallback,
@@ -961,11 +1188,16 @@ class IntelliSearch:
                     max_web_results=self.max_results
                 )
                 
+                # Index the database
                 await self.rag_system.index_database(force_reindex=False)
+                
+                # Get system status for user display
+                self.system_status = self.rag_system.get_system_status()
                 self.is_initialized = True
                 
             return success
-        except Exception:
+        except Exception as e:
+            print(f"RAG system initialization error: {e}")
             return False
     
     async def call_ollama(self, prompt: str, model: str = "llama3.2:3b") -> str:
@@ -1070,68 +1302,96 @@ class IntelliSearch:
                 """, unsafe_allow_html=True)
     
     def render_search_results(self, rag_result: Dict[str, Any]):
-        """Render search results with enhanced animations"""
-        strategy = rag_result.get('search_strategy', 'unknown')
-        local_results = rag_result.get('local_results', [])
-        web_results = rag_result.get('web_results', [])
+        """Render search results with enhanced animations for V2 system"""
+        method = rag_result.get('method', 'unknown')
+        sources = rag_result.get('sources', [])
+        confidence = rag_result.get('confidence', 0.0)
         
         # Enhanced search strategy indicator with animations
-        if strategy == 'local_database':
+        if method == 'semantic_search':
             st.markdown(f"""
             <div class="search-strategy">
                 <div class="strategy-indicator strategy-local animate-slide-in">
-                    <span class="strategy-icon">🔍</span>
+                    <span class="strategy-icon">🧠</span>
                     <span class="strategy-text">
-                        Found <span class="result-count animate-counter">{len(local_results)}</span> 
-                        relevant articles
+                        Semantic Search - Found <span class="result-count animate-counter">{len(sources)}</span> 
+                        relevant sources (Confidence: {confidence:.1%})
                     </span>
                     <div class="strategy-bar local-bar"></div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
-        elif strategy == 'web_fallback':
+        elif method == 'vector_search':
+            st.markdown(f"""
+            <div class="search-strategy">
+                <div class="strategy-indicator strategy-vector animate-slide-in">
+                    <span class="strategy-icon">📊</span>
+                    <span class="strategy-text">
+                        Vector Search - Found <span class="result-count animate-counter">{len(sources)}</span> 
+                        relevant documents
+                    </span>
+                    <div class="strategy-bar vector-bar"></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        elif method == 'web_search':
             st.markdown(f"""
             <div class="search-strategy">
                 <div class="strategy-indicator strategy-web animate-slide-in">
                     <span class="strategy-icon">🌐</span>
                     <span class="strategy-text">
-                        Retrieved <span class="result-count animate-counter">{len(web_results)}</span> 
+                        Web Search - Retrieved <span class="result-count animate-counter">{len(sources)}</span> 
                         external sources
                     </span>
                     <div class="strategy-bar web-bar"></div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
+        elif method == 'basic_response':
+            st.markdown(f"""
+            <div class="search-strategy">
+                <div class="strategy-indicator strategy-basic animate-slide-in">
+                    <span class="strategy-icon">💡</span>
+                    <span class="strategy-text">
+                        Basic Response Mode - Guidance provided
+                    </span>
+                    <div class="strategy-bar basic-bar"></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         
-        # Display results
-        if local_results:
-            with st.expander(f"Sources ({len(local_results)})", expanded=False):
-                for result in local_results:
-                    metadata = result.get('metadata', {})
-                    st.markdown(f"""
-                    <div class="result-card">
-                        <div class="result-title">{metadata.get('title', 'Source')}</div>
-                        <div class="result-content">
-                            {metadata.get('summary', 'Content available')[:400]}...
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-        
-        if web_results:
-            with st.expander(f"External Sources ({len(web_results)})", expanded=False):
-                for result in web_results:
-                    url = result.get('url', '#')
-                    st.markdown(f"""
-                    <div class="result-card">
-                        <div class="result-title">{result.get('title', 'External Source')}</div>
-                        <div class="result-content">
-                            {result.get('snippet', 'External content')[:400]}...
-                        </div>
-                        <a href="{url}" target="_blank" class="source-link">
-                            View Source →
-                        </a>
-                    </div>
-                    """, unsafe_allow_html=True)
+        # Display sources if available
+        if sources:
+            with st.expander(f"Sources ({len(sources)})", expanded=False):
+                for source in sources:
+                    # Handle both V1 and V2 source formats
+                    if isinstance(source, dict):
+                        if 'content' in source:  # V2 format
+                            metadata = source.get('metadata', {})
+                            content = source.get('content', '')[:400]
+                            similarity = source.get('similarity', 0.0)
+                            st.markdown(f"""
+                            <div class="result-card">
+                                <div class="result-title">{metadata.get('title', source.get('id', 'Source'))}</div>
+                                <div class="result-content">
+                                    {content}{'...' if len(source.get('content', '')) > 400 else ''}
+                                </div>
+                                <div class="result-meta">Similarity: {similarity:.1%}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:  # Handle web search results
+                            url = source.get('url', '#')
+                            st.markdown(f"""
+                            <div class="result-card">
+                                <div class="result-title">{source.get('title', 'External Source')}</div>
+                                <div class="result-content">
+                                    {source.get('snippet', source.get('content', 'External content'))[:400]}...
+                                </div>
+                                <a href="{url}" target="_blank" class="source-link">
+                                    View Source →
+                                </a>
+                            </div>
+                            """, unsafe_allow_html=True)
     
     async def handle_basic_query(self, user_question: str):
         """Handle queries in basic mode when full RAG is unavailable"""
@@ -1196,10 +1456,23 @@ class IntelliSearch:
             st.error(f"Error in basic mode: {str(e)}")
     
     async def process_query(self, user_question: str):
-        """Process user query with enhanced loading states"""
+        """Process user query with enhanced loading states and caching"""
         if not self.is_initialized:
             # Handle degraded mode - provide basic functionality
             await self.handle_basic_query(user_question)
+            return
+        
+        # Check cache first for performance optimization
+        cached_result = self._get_cached_response(user_question)
+        if cached_result:
+            # Display cached results
+            self.render_search_results(cached_result)
+            await self.display_enhanced_response(cached_result)
+            
+            # Update metrics for cached response
+            response_text = cached_result.get('response', '')
+            self.update_token_metrics(user_question, response_text) 
+            self.performance_metrics['total_queries'] += 1
             return
         
         # Enhanced processing indicator
@@ -1222,8 +1495,11 @@ class IntelliSearch:
             # Track query metrics
             start_time = time.time()
             
-            # Execute RAG pipeline
+            # Execute RAG pipeline with Enhanced V2 system
             rag_result = await self.rag_system.query(user_question)
+            
+            # Cache the result for future use
+            self._cache_response(user_question, rag_result)
             
             # Update token metrics
             response_text = rag_result.get('response', '')
@@ -1231,19 +1507,25 @@ class IntelliSearch:
             
             # Update performance metrics
             end_time = time.time()
-            query_time = end_time - start_time
+            query_time = rag_result.get('query_time', end_time - start_time)
             self.performance_metrics['total_queries'] += 1
             self.performance_metrics['avg_response_time'] = (
                 (self.performance_metrics['avg_response_time'] * (self.performance_metrics['total_queries'] - 1) + query_time) /
                 self.performance_metrics['total_queries']
             )
             
-            # Add to query history
+            # Add to query history (limit history for memory management)
             self.query_history.append({
                 'query': user_question,
                 'timestamp': time.time(),
-                'response_time': query_time
+                'response_time': query_time,
+                'method': rag_result.get('method', 'unknown'),
+                'confidence': rag_result.get('confidence', 0.0)
             })
+            
+            # Limit query history size for memory management
+            if len(self.query_history) > 50:
+                self.query_history = self.query_history[-25:]  # Keep last 25 queries
             
             # Clear processing indicator
             processing_placeholder.empty()
@@ -1251,9 +1533,11 @@ class IntelliSearch:
             # Display results with animation
             self.render_search_results(rag_result)
             
-            # Generate response
-            if rag_result.get('ready_for_llm'):
-                await self.generate_response(rag_result)
+            # Generate and display response directly from V2 system
+            if rag_result.get('response'):
+                await self.display_enhanced_response(rag_result)
+            else:
+                st.warning("No response generated. Please try rephrasing your query.")
                 
         except Exception as e:
             processing_placeholder.empty()
@@ -1261,52 +1545,62 @@ class IntelliSearch:
             self.performance_metrics['success_rate'] = max(0, self.performance_metrics['success_rate'] - 5)
             st.error(f"Query processing failed: {str(e)}")
     
-    async def generate_response(self, rag_result: Dict[str, Any]):
-        """Generate and display AI response with typing animation"""
-        context_window = rag_result.get('context_window', '')
+    async def display_enhanced_response(self, rag_result: Dict[str, Any]):
+        """Display response from Enhanced RAG System V2"""
+        response_text = rag_result.get('response', 'No response available')
+        method = rag_result.get('method', 'unknown')
+        confidence = rag_result.get('confidence', 0.0)
+        query_time = rag_result.get('query_time', 0.0)
         
-        # Enhanced response generation indicator
-        response_placeholder = st.empty()
-        response_placeholder.markdown("""
-        <div class="response-generating">
-            <div class="ai-thinking">
-                <span class="ai-icon">🤖</span>
-                <span class="thinking-text">Generating intelligent response</span>
-                <div class="thinking-animation">
-                    <span class="brain-wave"></span>
-                    <span class="brain-wave"></span>
-                    <span class="brain-wave"></span>
+        # Determine response styling based on method
+        if method == 'semantic_search':
+            response_icon = "🧠"
+            response_title = "Semantic Search Response"
+            response_class = "semantic"
+        elif method == 'vector_search':
+            response_icon = "📊"
+            response_title = "Vector Search Response"
+            response_class = "vector"
+        elif method == 'web_search':
+            response_icon = "🌐"
+            response_title = "Web Search Response"
+            response_class = "web"
+        elif method == 'basic_response':
+            response_icon = "💡"
+            response_title = "Basic Response"
+            response_class = "basic"
+        else:
+            response_icon = "🤖"
+            response_title = "AI Response"
+            response_class = "default"
+        
+        # Display response with enhanced styling
+        st.markdown(f"""
+        <div class="ai-response animate-fade-in {response_class}">
+            <div class="ai-response-header">
+                <span class="response-icon">{response_icon}</span>
+                <span class="response-title">{response_title}</span>
+                <div class="response-indicator"></div>
+            </div>
+            <div class="ai-response-content">
+                {response_text.replace(chr(10), '<br>')}
+            </div>
+            <div class="response-footer">
+                <div class="response-metrics">
+                    <span class="metric">Method: {method.replace('_', ' ').title()}</span>
+                    <span class="metric">Confidence: {confidence:.1%}</span>
+                    <span class="metric">Response Time: {query_time:.2f}s</span>
                 </div>
+                <span class="powered-by">Powered by Enhanced RAG System V2</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
-        try:
-            ai_response = await self.get_llm_response(context_window)
-            
-            # Clear generating indicator
-            response_placeholder.empty()
-            
-            # Display response with enhanced styling and typing effect
-            st.markdown(f"""
-            <div class="ai-response animate-fade-in">
-                <div class="ai-response-header">
-                    <span class="response-icon">💡</span>
-                    <span class="response-title">Intelligent Response</span>
-                    <div class="response-indicator"></div>
-                </div>
-                <div class="ai-response-content typing-animation">
-                    {ai_response.replace(chr(10), '<br>')}
-                </div>
-                <div class="response-footer">
-                    <span class="powered-by">Powered by Advanced RAG System</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-        except Exception as e:
-            response_placeholder.empty()
-            st.error(f"Response generation failed: {str(e)}")
+    
+    async def generate_response(self, rag_result: Dict[str, Any]):
+        """Legacy method - kept for backward compatibility"""
+        # This method is now deprecated in favor of display_enhanced_response
+        # but kept for any remaining legacy calls
+        await self.display_enhanced_response(rag_result)
     
     async def run(self):
         """Main application interface"""
@@ -1349,38 +1643,96 @@ class IntelliSearch:
             time.sleep(1)
             st.rerun()
         
-        # Show system status information (but don't block the interface)
-        if not self.is_initialized:
-            if not RAG_AVAILABLE:
-                st.info("🌟 **Basic Mode Active** - Core search functionality available. Advanced RAG features are temporarily unavailable due to missing dependencies.")
+        # Enhanced system status with space database statistics
+        if self.system_status:
+            # Display comprehensive system status for initialized system
+            capabilities = self.system_status['capabilities']
+            active_caps = [k.replace('_', ' ').title() for k, v in capabilities.items() if v]
+            
+            # Get database statistics if available
+            total_articles = "1100+"  # Our expanded database
+            
+            if self.system_status['system_mode'] == 'full_semantic':
+                st.success(f"🚀 **Full Semantic Mode Active** - {total_articles} space articles indexed | Features: {', '.join(active_caps)}")
+            elif self.system_status['system_mode'] == 'vector_only':
+                st.info(f"📊 **Vector Search Mode** - {total_articles} space articles available | Features: {', '.join(active_caps)}")
             else:
-                st.warning("⚠️ **Basic Mode Active** - Some advanced features may be limited. You can still use basic search functionality.")
+                st.warning(f"🔍 **{self.system_status['system_mode'].replace('_', ' ').title()}** - {total_articles} articles | Available: {', '.join(active_caps)}")
+            
+            # Add database categories info
+            with st.expander("📚 Space Knowledge Database Categories", expanded=False):
+                st.markdown("""
+                **🚀 NASA Missions**: Artemis, Apollo, Mars exploration, deep space missions  
+                **🌍 Planets & Astronomy**: Solar system, exoplanets, galaxies, stars  
+                **👨‍🚀 Astronauts**: Biographies of space explorers and their achievements  
+                **🏢 Space Agencies**: NASA, ESA, SpaceX, ISRO, and international programs  
+                **📡 Space Technology**: Rockets, satellites, space stations, instruments  
+                **📰 Space News**: Latest developments and discoveries  
+                **🛰️ Space Stations**: ISS, Tiangong, historical stations  
+                **🌌 Deep Space**: Voyager missions, telescopes, interstellar exploration  
+                **🔬 Space Science**: Planetary research, astrobiology, space physics  
+                **📅 Space History**: Timeline of major milestones and achievements
+                """)
+                
+        elif not self.is_initialized:
+            if not RAG_AVAILABLE:
+                # Only show this briefly, then hide it to not clutter the interface
+                if 'status_shown' not in st.session_state:
+                    st.session_state['status_shown'] = True
+                    st.info("🌟 **Basic Mode Active** - Core search functionality available")
+            else:
+                # Similarly, only show briefly
+                if 'status_shown' not in st.session_state:
+                    st.session_state['status_shown'] = True
+                    st.warning("⚠️ **Basic Mode Active** - Some advanced features may be limited")
         
-        # Enhanced main query interface with perfect centering
-        st.markdown('<div class="query-container animate-slide-up"><div class="query-wrapper"><div class="search-icon">🚀</div>', unsafe_allow_html=True)
+        # Enhanced main query interface with proper structure
+        st.markdown("""
+        <div class="query-container animate-slide-up">
+            <div class="query-wrapper">
+        """, unsafe_allow_html=True)
+        
+        # Main search title
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 2rem; z-index: 300; position: relative;">
+            <h2 style="color: #64ffda; font-size: 1.5rem; font-weight: 600; margin: 0;">
+                🔍 Enter Your Query
+            </h2>
+            <p style="color: #cbd5e0; font-size: 1rem; margin: 0.5rem 0 0 0; opacity: 0.8;">
+                Ask anything about space, technology, careers, or general knowledge
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
         
         # Query input with enhanced styling
         user_question = st.text_input(
             "Search Query",
-            placeholder="🔍 Enter your query to search across knowledge base and web sources...",
+            placeholder="🚀 What would you like to explore today?",
             help="Submit queries for intelligent information retrieval using advanced RAG techniques",
             label_visibility="collapsed",
             key="main_search_input"
         )
         
+        # Add some spacing
+        st.markdown("<div style='margin: 1.5rem 0;'></div>", unsafe_allow_html=True)
+        
         # Enhanced button layout with perfect centering
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             query_button = st.button(
-                "🚀 Search Intelligence", 
+                "🚀 SEARCH", 
                 type="primary",
                 help="Execute advanced semantic search",
                 use_container_width=True
             )
         
-        # Add user guidance and instructions (removed welcome message)
+        # Close the query container properly
+        st.markdown("""
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # How to use button
+        # How to use section
         with st.expander("📚 How to Use This System"):
             st.markdown("""
                     ### Getting Started
@@ -1399,8 +1751,6 @@ class IntelliSearch:
                     - Include context when relevant (e.g., "for beginners" or "technical details")
                     - Ask follow-up questions to dive deeper into topics
                     """)
-        
-        st.markdown('</div></div></div>', unsafe_allow_html=True)
         
         # Process query
         if query_button and user_question:

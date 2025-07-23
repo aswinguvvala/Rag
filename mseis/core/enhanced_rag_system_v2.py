@@ -176,8 +176,8 @@ class EnhancedRAGSystemV2:
             'langchain_integration': FEATURES['langchain']
         }
         
-        # Determine system mode
-        if self.capabilities['semantic_search']:
+        # Determine system mode based on available capabilities
+        if self.capabilities['semantic_search'] and self.capabilities['vector_storage']:
             self.system_mode = "full_semantic"
         elif self.capabilities['vector_storage']:
             self.system_mode = "vector_only"
@@ -185,6 +185,14 @@ class EnhancedRAGSystemV2:
             self.system_mode = "web_search"
         else:
             self.system_mode = "basic_text"
+            
+        # Log available features for debugging
+        available_features = [k for k, v in FEATURES.items() if v]
+        missing_features = [k for k, v in FEATURES.items() if not v]
+        logger.info(f"System capabilities analysis complete")
+        logger.info(f"Available features: {available_features}")
+        logger.info(f"Missing features: {missing_features}")
+        logger.info(f"System mode: {self.system_mode}")
     
     async def initialize(self):
         """Initialize the RAG system with available components"""
@@ -429,43 +437,98 @@ class EnhancedRAGSystemV2:
         """Perform web search as fallback"""
         try:
             if self.web_search:
-                results = await self.web_search.search(question, max_results=self.max_web_results)
+                # Use the web search manager's search_web method
+                results, source_urls = await self.web_search.search_web(question, max_results=self.max_web_results)
                 if results:
                     response = f"Based on web search results for '{question}':\n\n"
                     for i, result in enumerate(results[:3], 1):
-                        response += f"{i}. {result.get('title', 'Result')}: {result.get('snippet', 'No description available')}\n"
+                        response += f"{i}. {result.get('title', 'Search Result')}: {result.get('snippet', result.get('content', 'No description available'))}\n"
+                        if result.get('url'):
+                            response += f"   Source: {result.get('url')}\n"
+                    
+                    # Format sources for display
+                    formatted_sources = []
+                    for result in results:
+                        formatted_sources.append({
+                            'title': result.get('title', 'Web Search Result'),
+                            'url': result.get('url', '#'),
+                            'snippet': result.get('snippet', result.get('content', 'No description available')),
+                            'source': 'web_search'
+                        })
                     
                     return {
                         'response': response,
-                        'sources': results,
+                        'sources': formatted_sources,
                         'confidence': 0.7
                     }
             
-            # Basic web search fallback
+            # Basic web search fallback when WebSearchManager is not available
             return {
-                'response': f"To find information about '{question}', I recommend searching the web or consulting specialized resources.",
+                'response': f"""I understand you're asking about: "{question}"
+
+While I don't have specific information about this topic in my current knowledge base, here are some suggestions:
+
+1. **Search Strategy**: Try searching for "{question}" using web search engines
+2. **Related Topics**: Consider searching for related space exploration topics
+3. **Authoritative Sources**: Check NASA, ESA, or other space agency websites
+4. **Academic Resources**: Look for peer-reviewed publications on this topic
+
+For space-related queries, I have comprehensive information about space missions, planets, astronauts, and space technology. Feel free to ask about specific space topics!""",
                 'sources': [],
-                'confidence': 0.3
+                'confidence': 0.4
             }
             
         except Exception as e:
             logger.error(f"Web search failed: {e}")
-            return {}
+            return {
+                'response': f"I apologize, but I'm unable to search the web for information about '{question}' at the moment. However, I have extensive knowledge about space exploration, astronomy, and related topics. Please feel free to ask me about specific space missions, planets, astronauts, or space technology!",
+                'sources': [],
+                'confidence': 0.3
+            }
     
     async def _basic_response(self, question: str) -> Dict[str, Any]:
         """Generate basic response when other methods fail"""
+        # Provide space-themed guidance based on common question patterns
+        space_keywords = ['space', 'moon', 'mars', 'planet', 'rocket', 'astronaut', 'nasa', 'satellite', 'galaxy', 'star']
+        is_space_related = any(keyword in question.lower() for keyword in space_keywords)
+        
+        if is_space_related:
+            response = f"""I understand you're asking about: "{question}"
+
+🚀 **Space Information Available**: I have comprehensive information about:
+- **Space Missions**: NASA programs, SpaceX launches, international missions
+- **Planets & Astronomy**: Solar system objects, exoplanets, deep space
+- **Space Technology**: Rockets, satellites, space stations, instruments
+- **Astronauts**: Biographies and achievements of space explorers
+- **Space History**: Major milestones and timeline of space exploration
+
+**Current System Status**: 
+- Available capabilities: {', '.join([k.replace('_', ' ').title() for k, v in self.capabilities.items() if v])}
+- System mode: {self.system_mode.replace('_', ' ').title()}
+
+**Try asking about**: Specific space missions, planets, astronauts, or space technology topics for detailed information!"""
+        else:
+            response = f"""I understand you're asking about: "{question}"
+
+While this doesn't appear to be a space-related question, I can help you in several ways:
+
+🔍 **Search Suggestions**:
+1. **Web Search**: Try searching for "{question}" using search engines
+2. **Specific Sources**: Look for authoritative sources related to your topic
+3. **Academic Resources**: Check for peer-reviewed information
+
+🚀 **My Specialty**: I have extensive knowledge about space exploration, astronomy, and related topics:
+- Space missions and technology
+- Planets and celestial objects  
+- Astronauts and space history
+- Current space developments
+
+**Current System Capabilities**: {', '.join([k.replace('_', ' ').title() for k, v in self.capabilities.items() if v])}
+
+Feel free to ask me about space topics, or try rephrasing your question if it's space-related!"""
+        
         return {
-            'response': f"""I understand you're asking about: "{question}"
-
-While I have limited capabilities in the current configuration, I can help you in the following ways:
-
-1. **Search Guidance**: I can suggest search terms and strategies
-2. **Information Categories**: I can help categorize your question
-3. **Resource Recommendations**: I can recommend where to find specific information
-
-Current system capabilities: {', '.join([k for k, v in self.capabilities.items() if v])}
-
-To get more advanced AI-powered responses, the system would benefit from additional AI packages being available.""",
+            'response': response,
             'sources': [],
             'confidence': 0.5
         }
