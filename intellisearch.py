@@ -426,6 +426,36 @@ st.markdown("""
         font-weight: 400;
     }
     
+    /* Basic Mode Styling */
+    .ai-response-container.basic-mode {
+        background: rgba(255, 193, 7, 0.1);
+        border: 2px solid rgba(255, 193, 7, 0.4);
+        border-radius: 25px;
+        padding: 2.5rem;
+        margin: 2rem 0;
+        border-left: 6px solid #ffc107;
+    }
+    
+    .ai-response-container.basic-mode .ai-response-header {
+        color: #ffc107;
+    }
+    
+    .ai-response-container.basic-mode .response-indicator.basic {
+        background: #ffc107;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    
+    .ai-response-container.basic-mode .response-footer {
+        color: #ffc107;
+        font-size: 0.9rem;
+        margin-top: 1rem;
+        text-align: center;
+        opacity: 0.8;
+    }
+    
     /* System Error Styling */
     .system-error {
         display: flex;
@@ -1103,10 +1133,73 @@ class IntelliSearch:
                     </div>
                     """, unsafe_allow_html=True)
     
+    async def handle_basic_query(self, user_question: str):
+        """Handle queries in basic mode when full RAG is unavailable"""
+        # Show processing indicator
+        processing_placeholder = st.empty()
+        processing_placeholder.markdown("""
+        <div class="processing-container">
+            <div class="processing-indicator">
+                <span class="processing-icon">🔍</span>
+                <span>Processing in Basic Mode...</span>
+                <div class="processing-dots">
+                    <span class="dot dot-1"></span>
+                    <span class="dot dot-2"></span>
+                    <span class="dot dot-3"></span>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        try:
+            # Provide basic response with helpful information
+            basic_response = f"""
+            **Basic Mode Response for: "{user_question}"**
+            
+            🔍 **Current Status**: Running in Basic Mode
+            
+            📝 **Your Query**: {user_question}
+            
+            ⚠️ **Limited Functionality**: Advanced RAG features are currently unavailable, but here's what I can tell you:
+            
+            🌟 **Suggestions**:
+            - Try rephrasing your question for better web search results
+            - Check if you're looking for general information that might be available online
+            - Consider the query context and related topics
+            
+            🔧 **To Enable Full Features**: The system needs additional AI packages for advanced search and retrieval capabilities.
+            
+            💡 **Alternative**: You can try searching the web directly for: "{user_question}"
+            """
+            
+            processing_placeholder.empty()
+            
+            # Display the basic response with nice formatting
+            st.markdown("""
+            <div class="ai-response-container basic-mode">
+                <div class="ai-response-header">
+                    <span class="response-icon">🔍</span>
+                    <span class="response-title">Basic Mode Response</span>
+                    <div class="response-indicator basic"></div>
+                </div>
+                <div class="ai-response-content">
+                    """ + basic_response.replace('\n', '<br>') + """
+                </div>
+                <div class="response-footer">
+                    <span class="powered-by">Basic Mode - Limited Functionality</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        except Exception as e:
+            processing_placeholder.empty()
+            st.error(f"Error in basic mode: {str(e)}")
+    
     async def process_query(self, user_question: str):
         """Process user query with enhanced loading states"""
         if not self.is_initialized:
-            st.error("System initialization in progress. Please wait...")
+            # Handle degraded mode - provide basic functionality
+            await self.handle_basic_query(user_question)
             return
         
         # Enhanced processing indicator
@@ -1239,8 +1332,8 @@ class IntelliSearch:
             init_placeholder.empty()
             
             if not success:
-                st.error("System initialization failed")
-                return
+                st.warning("⚠️ Running in Basic Mode - Advanced RAG features unavailable")
+                self.is_initialized = False  # Set degraded mode flag
                 
             # Success animation
             st.markdown("""
@@ -1256,34 +1349,12 @@ class IntelliSearch:
             time.sleep(1)
             st.rerun()
         
+        # Show system status information (but don't block the interface)
         if not self.is_initialized:
             if not RAG_AVAILABLE:
-                st.markdown("""
-                <div class="system-error">
-                    <div class="error-container">
-                        <div class="error-icon">⚠️</div>
-                        <div class="error-title">System Dependencies Required</div>
-                        <div class="error-message">
-                            IntelliSearch requires additional packages to function properly.
-                        </div>
-                        <div class="error-details">
-                            <p><strong>Missing:</strong> Advanced RAG System components</p>
-                            <p><strong>To fix:</strong> Install required dependencies</p>
-                            <code>pip install sentence-transformers transformers torch faiss-cpu chromadb</code>
-                        </div>
-                        <div class="error-debug">
-                            <p><strong>Debug Info:</strong></p>
-                            <code style="color: #ff6b6b; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; display: block; white-space: pre-wrap;">""" + str(IMPORT_ERROR if 'IMPORT_ERROR' in globals() else 'Import error details not available') + """</code>
-                        </div>
-                        <div class="error-note">
-                            The beautiful space interface works, but search functionality needs these packages.
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                st.info("🌟 **Basic Mode Active** - Core search functionality available. Advanced RAG features are temporarily unavailable due to missing dependencies.")
             else:
-                st.error("System initialization failed - please try refreshing the page")
-            return
+                st.warning("⚠️ **Basic Mode Active** - Some advanced features may be limited. You can still use basic search functionality.")
         
         # Enhanced main query interface with perfect centering
         st.markdown('<div class="query-container animate-slide-up"><div class="query-wrapper"><div class="search-icon">🚀</div>', unsafe_allow_html=True)
