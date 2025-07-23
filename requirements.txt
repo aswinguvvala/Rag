@@ -25,15 +25,21 @@ pyyaml>=6.0.0,<7.0.0
 # Utilities (lightweight)
 tqdm>=4.65.0,<5.0.0
 python-dateutil>=2.8.0,<3.0.0
+structlog>=24.0.0,<25.0.0
 
 # Optional AI dependencies (will be imported conditionally)
 sentence-transformers>=3.0.0,<4.0.0; python_version>="3.8"
 torch>=2.4.0,<2.6.0; python_version>="3.8"
 transformers>=4.30.0,<5.0.0; python_version>="3.8"
-# faiss-cpu>=1.7.0,<1.8.0; python_version>="3.8"  # Disabled for Streamlit Cloud - compilation issues with Python 3.13
+# Vector Storage and ML (FAISS replacement with ChromaDB + sklearn)
+scikit-learn>=1.3.0,<2.0.0; python_version>="3.8"
 tenacity>=8.2.0,<10.0.0
 diskcache>=5.6.0,<6.0.0
 
 # Additional dependencies for full functionality (conditional)
 chromadb>=0.4.0,<0.6.0; python_version>="3.8"
 httpx>=0.27.0,<1.0.0
+
+# Enhanced RAG capabilities
+langchain>=0.1.0,<0.3.0; python_version>="3.8"  
+beautifulsoup4>=4.12.0,<5.0.0; python_version>="3.8"

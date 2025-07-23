@@ -11,7 +11,6 @@ fileWatcherType = "none"
 
 [browser]
 gatherUsageStats = false
-showErrorDetails = true
 
 [theme]
 primaryColor = "#00ff88"
@@ -32,5 +31,4 @@ messageFormat = "%(asctime)s %(message)s"
 
 # Performance settings
 [client]
-caching = true
 toolbarMode = "minimal"
