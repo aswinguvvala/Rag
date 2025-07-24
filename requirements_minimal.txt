@@ -1,7 +1,0 @@
-streamlit
-sentence-transformers
-numpy
-aiohttp
-openai
-python-dotenv
-requests

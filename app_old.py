@@ -15,14 +15,13 @@ import aiohttp
 import openai
 from dotenv import load_dotenv
 
-# Add the mseis directory to the path
+# Add the current directory to the path for imports
 current_dir = Path(__file__).parent
-mseis_dir = current_dir / "mseis"
-sys.path.insert(0, str(mseis_dir))
+sys.path.insert(0, str(current_dir))
 
 try:
-    from core.enhanced_rag_system_v2 import EnhancedRAGSystemV2
-    RAG_SYSTEM = EnhancedRAGSystemV2()
+    from hybrid_rag_system import HybridRAGSystem
+    RAG_SYSTEM = HybridRAGSystem()
     RAG_AVAILABLE = True
     RAG_ERROR = None
 except ImportError as e:
@@ -1104,9 +1103,6 @@ class IntelliSearch:
                     max_local_results=self.max_results,
                     max_web_results=self.max_results
                 )
-                
-                # Index the database
-                await self.rag_system.index_database(force_reindex=False)
                 
                 # Get system status for user display
                 self.system_status = self.rag_system.get_system_status()

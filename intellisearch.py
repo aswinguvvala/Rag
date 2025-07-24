@@ -15,14 +15,13 @@ import aiohttp
 import openai
 from dotenv import load_dotenv
 
-# Add the mseis directory to the path
+# Add the current directory to the path for imports
 current_dir = Path(__file__).parent
-mseis_dir = current_dir / "mseis"
-sys.path.insert(0, str(mseis_dir))
+sys.path.insert(0, str(current_dir))
 
 try:
-    from core.enhanced_rag_system_v2 import EnhancedRAGSystemV2
-    RAG_SYSTEM = EnhancedRAGSystemV2()
+    from hybrid_rag_system import HybridRAGSystem
+    RAG_SYSTEM = HybridRAGSystem()
     RAG_AVAILABLE = True
     RAG_ERROR = None
 except ImportError as e:
@@ -47,11 +46,21 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;600;700&display=swap');
     
-    /* Professional Deep Space Background */
+    /* Professional Deep Space Background with Image */
     .stApp {
         background: 
+            /* Image overlay gradients for readability */
+            radial-gradient(ellipse at top, rgba(15, 15, 30, 0.85) 0%, rgba(0, 0, 0, 0.9) 50%, rgba(0, 0, 0, 0.95) 100%),
+            linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(5, 5, 16, 0.85) 25%, rgba(10, 10, 21, 0.9) 50%, rgba(5, 5, 16, 0.85) 75%, rgba(0, 0, 0, 0.8) 100%),
+            /* Space background image */
+            url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'),
+            /* Fallback gradients if image fails to load */
             radial-gradient(ellipse at top, rgba(15, 15, 30, 0.8) 0%, rgba(0, 0, 0, 0.9) 50%, #000000 100%),
             linear-gradient(180deg, #000000 0%, #050510 25%, #0a0a15 50%, #050510 75%, #000000 100%);
+        background-size: cover, cover, cover, cover, cover;
+        background-position: center, center, center, center, center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
         color: #e1e8ed;
         font-family: 'Inter', sans-serif;
         min-height: 100vh;
@@ -60,145 +69,30 @@ st.markdown("""
         padding-bottom: 2rem;
     }
     
-    /* Enhanced Solar System Animation */
+    /* Optimized Space Elements */
     .stApp::before {
         content: '';
         position: fixed;
         top: 50%;
         left: 50%;
-        width: 35px;
-        height: 35px;
+        width: 30px;
+        height: 30px;
         background: radial-gradient(circle, #FFD700 0%, #FF8C00 70%, #FF6B00 100%);
         border-radius: 50%;
         transform: translate(-50%, -50%);
-        box-shadow: 
-            0 0 40px rgba(255, 215, 0, 0.9),
-            0 0 80px rgba(255, 140, 0, 0.6),
-            0 0 120px rgba(255, 107, 0, 0.3),
-            0 0 160px rgba(255, 69, 0, 0.1);
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
         pointer-events: none;
         z-index: -1;
-        animation: sunPulse 6s ease-in-out infinite alternate;
+        animation: gentlePulse 4s ease-in-out infinite alternate;
+        will-change: opacity;
     }
     
-    @keyframes sunPulse {
-        0% { 
-            box-shadow: 
-                0 0 40px rgba(255, 215, 0, 0.9),
-                0 0 80px rgba(255, 140, 0, 0.6),
-                0 0 120px rgba(255, 107, 0, 0.3);
-        }
-        100% { 
-            box-shadow: 
-                0 0 50px rgba(255, 215, 0, 1),
-                0 0 100px rgba(255, 140, 0, 0.8),
-                0 0 150px rgba(255, 107, 0, 0.4);
-        }
+    @keyframes gentlePulse {
+        0% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+        100% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
     }
 
-    /* Individual Planet Orbits */
-    .planet {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        pointer-events: none;
-        z-index: -1;
-    }
-
-    /* Mercury */
-    .planet:nth-of-type(1) {
-        width: 4px;
-        height: 4px;
-        background: #8C7853;
-        border-radius: 50%;
-        transform-origin: 60px 0;
-        animation: orbit-mercury 8s linear infinite;
-    }
-
-    /* Venus */
-    .planet:nth-of-type(2) {
-        width: 6px;
-        height: 6px;
-        background: #FFC649;
-        border-radius: 50%;
-        transform-origin: 80px 0;
-        animation: orbit-venus 12s linear infinite;
-    }
-
-    /* Earth */
-    .planet:nth-of-type(3) {
-        width: 7px;
-        height: 7px;
-        background: radial-gradient(circle, #4A90E2 0%, #2E5C8A 100%);
-        border-radius: 50%;
-        transform-origin: 100px 0;
-        animation: orbit-earth 16s linear infinite;
-        box-shadow: 0 0 6px rgba(74, 144, 226, 0.6);
-    }
-
-    /* Mars */
-    .planet:nth-of-type(4) {
-        width: 5px;
-        height: 5px;
-        background: #CD5C5C;
-        border-radius: 50%;
-        transform-origin: 120px 0;
-        animation: orbit-mars 24s linear infinite;
-    }
-
-    /* Jupiter */
-    .planet:nth-of-type(5) {
-        width: 14px;
-        height: 14px;
-        background: radial-gradient(circle, #D2691E 0%, #B8860B 100%);
-        border-radius: 50%;
-        transform-origin: 160px 0;
-        animation: orbit-jupiter 48s linear infinite;
-        box-shadow: 0 0 8px rgba(210, 105, 30, 0.7);
-    }
-
-    /* Saturn */
-    .planet:nth-of-type(6) {
-        width: 12px;
-        height: 12px;
-        background: #FAD5A5;
-        border-radius: 50%;
-        transform-origin: 190px 0;
-        animation: orbit-saturn 60s linear infinite;
-        box-shadow: 0 0 0 3px rgba(250, 213, 165, 0.3);
-    }
-
-    /* Uranus */
-    .planet:nth-of-type(7) {
-        width: 8px;
-        height: 8px;
-        background: #4FD0E3;
-        border-radius: 50%;
-        transform-origin: 220px 0;
-        animation: orbit-uranus 84s linear infinite;
-    }
-
-    /* Neptune */
-    .planet:nth-of-type(8) {
-        width: 8px;
-        height: 8px;
-        background: #4169E1;
-        border-radius: 50%;
-        transform-origin: 250px 0;
-        animation: orbit-neptune 120s linear infinite;
-    }
-
-    /* Pluto */
-    .planet:nth-of-type(9) {
-        width: 3px;
-        height: 3px;
-        background: #8B7355;
-        border-radius: 50%;
-        transform-origin: 280px 0;
-        animation: orbit-pluto 160s linear infinite;
-    }
-    
-    /* Professional Starfield */
+    /* Efficient Starfield */
     .stApp::after {
         content: '';
         position: fixed;
@@ -207,147 +101,93 @@ st.markdown("""
         width: 100vw;
         height: 100vh;
         background: 
-            radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.3), transparent),
-            radial-gradient(1px 1px at 40px 70px, rgba(255, 255, 255, 0.2), transparent),
-            radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.3), transparent),
-            radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.2), transparent),
-            radial-gradient(1px 1px at 160px 30px, rgba(255, 255, 255, 0.3), transparent),
-            radial-gradient(1px 1px at 200px 90px, rgba(255, 255, 255, 0.25), transparent),
-            radial-gradient(1px 1px at 240px 50px, rgba(255, 255, 255, 0.2), transparent),
-            radial-gradient(1px 1px at 280px 120px, rgba(255, 255, 255, 0.3), transparent),
-            radial-gradient(1px 1px at 320px 40px, rgba(255, 255, 255, 0.2), transparent),
-            radial-gradient(1px 1px at 360px 90px, rgba(255, 255, 255, 0.25), transparent),
-            radial-gradient(1px 1px at 400px 20px, rgba(255, 255, 255, 0.3), transparent),
-            radial-gradient(1px 1px at 440px 110px, rgba(255, 255, 255, 0.2), transparent);
+            radial-gradient(1px 1px at 25px 25px, rgba(255, 255, 255, 0.4), transparent),
+            radial-gradient(1px 1px at 75px 75px, rgba(255, 255, 255, 0.3), transparent),
+            radial-gradient(1px 1px at 125px 25px, rgba(255, 255, 255, 0.4), transparent),
+            radial-gradient(1px 1px at 175px 75px, rgba(255, 255, 255, 0.2), transparent);
         background-repeat: repeat;
-        background-size: 500px 200px;
+        background-size: 200px 100px;
         pointer-events: none;
         z-index: -2;
-        opacity: 0.6;
-        animation: starTwinkle 8s ease-in-out infinite alternate;
+        opacity: 0.5;
+        animation: subtleTwinkle 6s ease-in-out infinite alternate;
+        will-change: opacity;
     }
     
-    @keyframes starTwinkle {
-        0% { opacity: 0.4; }
-        100% { opacity: 0.7; }
+    @keyframes subtleTwinkle {
+        0% { opacity: 0.3; }
+        100% { opacity: 0.6; }
     }
     
-    /* Individual Planet Orbital Animations */
-    @keyframes orbit-mercury {
-        0% { transform: translate(-50%, -50%) rotate(0deg) translateX(60px) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg) translateX(60px) rotate(-360deg); }
-    }
-    
-    @keyframes orbit-venus {
-        0% { transform: translate(-50%, -50%) rotate(0deg) translateX(80px) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg) translateX(80px) rotate(-360deg); }
-    }
-    
-    @keyframes orbit-earth {
-        0% { transform: translate(-50%, -50%) rotate(0deg) translateX(100px) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg) translateX(100px) rotate(-360deg); }
-    }
-    
-    @keyframes orbit-mars {
-        0% { transform: translate(-50%, -50%) rotate(0deg) translateX(120px) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg) translateX(120px) rotate(-360deg); }
-    }
-    
-    @keyframes orbit-jupiter {
-        0% { transform: translate(-50%, -50%) rotate(0deg) translateX(160px) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg) translateX(160px) rotate(-360deg); }
-    }
-    
-    @keyframes orbit-saturn {
-        0% { transform: translate(-50%, -50%) rotate(0deg) translateX(190px) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg) translateX(190px) rotate(-360deg); }
-    }
-    
-    @keyframes orbit-uranus {
-        0% { transform: translate(-50%, -50%) rotate(0deg) translateX(220px) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg) translateX(220px) rotate(-360deg); }
-    }
-    
-    @keyframes orbit-neptune {
-        0% { transform: translate(-50%, -50%) rotate(0deg) translateX(250px) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg) translateX(250px) rotate(-360deg); }
-    }
-    
-    @keyframes orbit-pluto {
-        0% { transform: translate(-50%, -50%) rotate(0deg) translateX(280px) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg) translateX(280px) rotate(-360deg); }
-    }
-    
-    
-    
-    
-    
-    /* Enhanced Input Styling */
-    .stTextInput {
-        width: 100% !important;
-        position: relative !important;
-        z-index: 100 !important;
-    }
-    
-    .stTextInput > div {
-        position: relative !important;
-        z-index: 100 !important;
-    }
-    
-    .stTextInput input {
+    /* Enhanced Input Styling - Fixed to prevent text cutoff */
+    .stTextInput > div > div > input {
         background: rgba(15, 15, 35, 0.95) !important;
         border: 2px solid rgba(100, 255, 218, 0.4) !important;
         border-radius: 25px !important;
         color: #f8fafc !important;
-        padding: 1.5rem 2rem 1.5rem 2rem !important;
-        font-size: 1.25rem !important;
+        padding: 1.2rem 2rem !important;
+        font-size: 1.1rem !important;
         font-weight: 500 !important;
         font-family: 'Inter', sans-serif !important;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3) !important;
         backdrop-filter: blur(20px) !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        text-align: left !important;
-        position: relative !important;
-        z-index: 100 !important;
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        min-height: 3.2rem !important;
+        line-height: 1.4 !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
     }
     
-    .stTextInput input:focus {
+    .stTextInput > div {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        overflow: visible !important;
+    }
+    
+    .stTextInput > div > div {
+        overflow: visible !important;
+        position: relative !important;
+    }
+    
+    .stTextInput {
+        margin: 2rem auto !important;
+        padding: 0 1rem !important;
+        max-width: 1200px !important;
+        width: 100% !important;
+        overflow: visible !important;
+    }
+    
+    /* Query input container improvements */
+    .query-container {
+        padding: 2rem 1rem !important;
+        margin: 0 auto !important;
+        max-width: 1200px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+    }
+    
+    .stTextInput > div > div > input:focus {
         border-color: rgba(0, 255, 136, 0.6) !important;
         border-left-color: #00ff88 !important;
         box-shadow: 
-            0 0 30px rgba(0, 255, 136, 0.3),
-            0 15px 50px rgba(0, 0, 0, 0.4) !important;
+            0 0 25px rgba(0, 255, 136, 0.4),
+            0 8px 30px rgba(0, 0, 0, 0.3) !important;
         outline: none !important;
-        transform: translateY(-2px) !important;
-        backdrop-filter: blur(25px) !important;
+        transform: none !important;
+        z-index: 10 !important;
     }
     
-    .stTextInput input:hover {
-        border-color: rgba(100, 255, 218, 0.5) !important;
-        box-shadow: 0 12px 45px rgba(0, 0, 0, 0.35) !important;
-        transform: translateY(-1px) !important;
-    }
-    
-    .stTextInput input::placeholder {
+    .stTextInput > div > div > input::placeholder {
         color: rgba(226, 232, 240, 0.6) !important;
         font-style: italic;
-        font-weight: 400 !important;
     }
     
-    /* Enhanced Button Styling */
-    .stButton {
-        position: relative !important;
-        z-index: 100 !important;
-    }
-    
-    .stButton > div {
-        position: relative !important;
-        z-index: 100 !important;
-    }
-    
+    /* Optimized Button Styling */
     .stButton button {
         background: linear-gradient(135deg, 
             rgba(0, 255, 136, 0.9) 0%, 
@@ -361,38 +201,19 @@ st.markdown("""
         font-weight: 600 !important;
         font-family: 'Inter', sans-serif !important;
         cursor: pointer !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        transition: transform 0.3s ease, box-shadow 0.3s ease !important;
         text-transform: uppercase !important;
         letter-spacing: 0.5px !important;
-        box-shadow: 
-            0 10px 40px rgba(0, 255, 136, 0.3),
-            0 5px 20px rgba(0, 0, 0, 0.2) !important;
-        position: relative !important;
-        overflow: hidden !important;
-        backdrop-filter: blur(10px) !important;
-        z-index: 100 !important;
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
+        box-shadow: 0 8px 25px rgba(0, 255, 136, 0.25) !important;
+        will-change: transform;
     }
     
     .stButton button:hover {
-        transform: translateY(-3px) scale(1.02) !important;
-        box-shadow: 
-            0 15px 50px rgba(0, 255, 136, 0.4),
-            0 8px 30px rgba(0, 0, 0, 0.3) !important;
-        background: linear-gradient(135deg, 
-            rgba(0, 255, 136, 1) 0%, 
-            rgba(100, 255, 218, 0.9) 50%, 
-            rgba(0, 255, 136, 1) 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 12px 35px rgba(0, 255, 136, 0.35) !important;
     }
     
-    .stButton button:active {
-        transform: translateY(-1px) scale(0.98) !important;
-        transition: all 0.1s ease !important;
-    }
-    
-    /* Result Cards */
+    /* Optimized Result Cards */
     .result-card {
         background: rgba(15, 15, 35, 0.85);
         border: 1px solid rgba(100, 255, 218, 0.25);
@@ -402,22 +223,17 @@ st.markdown("""
         color: #f1f5f9;
         font-family: 'Inter', sans-serif;
         backdrop-filter: blur(20px);
-        box-shadow: 
-            0 10px 40px rgba(0, 0, 0, 0.3),
-            0 0 60px rgba(100, 255, 218, 0.1);
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         border-left: 4px solid transparent;
+        will-change: transform;
     }
     
     .result-card:hover {
         border-color: rgba(0, 255, 136, 0.4);
         border-left-color: #00ff88;
-        transform: translateY(-6px) scale(1.02);
-        box-shadow: 
-            0 20px 60px rgba(0, 0, 0, 0.4),
-            0 0 80px rgba(0, 255, 136, 0.2);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
     }
     
     /* AI Response */
@@ -433,271 +249,9 @@ st.markdown("""
         box-shadow: 
             0 15px 50px rgba(0, 0, 0, 0.4),
             0 0 80px rgba(100, 255, 218, 0.15);
-        position: relative;
-        overflow: hidden;
         border-left: 6px solid #00ff88;
     }
     
-    /* Enhanced Response Type Styling */
-    .ai-response.semantic {
-        border-color: rgba(138, 43, 226, 0.4);
-        border-left-color: #8a2be2;
-        box-shadow: 
-            0 15px 50px rgba(0, 0, 0, 0.4),
-            0 0 80px rgba(138, 43, 226, 0.2);
-    }
-    
-    .ai-response.vector {
-        border-color: rgba(255, 165, 0, 0.4);
-        border-left-color: #ffa500;
-        box-shadow: 
-            0 15px 50px rgba(0, 0, 0, 0.4),
-            0 0 80px rgba(255, 165, 0, 0.2);
-    }
-    
-    .ai-response.web {
-        border-color: rgba(30, 144, 255, 0.4);
-        border-left-color: #1e90ff;
-        box-shadow: 
-            0 15px 50px rgba(0, 0, 0, 0.4),
-            0 0 80px rgba(30, 144, 255, 0.2);
-    }
-    
-    .ai-response.basic {
-        border-color: rgba(255, 193, 7, 0.4);
-        border-left-color: #ffc107;
-        box-shadow: 
-            0 15px 50px rgba(0, 0, 0, 0.4),
-            0 0 80px rgba(255, 193, 7, 0.2);
-    }
-    
-    .ai-response-header {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #f1f5f9;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-    
-    .ai-response-content {
-        color: #e2e8f0;
-        line-height: 1.8;
-        font-size: 1.125rem;
-        font-weight: 400;
-    }
-    
-    /* Response Metrics Styling */
-    .response-footer {
-        margin-top: 2rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid rgba(100, 255, 218, 0.2);
-    }
-    
-    .response-metrics {
-        display: flex;
-        gap: 1.5rem;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
-    }
-    
-    .response-metrics .metric {
-        background: rgba(0, 0, 0, 0.3);
-        padding: 0.5rem 1rem;
-        border-radius: 15px;
-        font-size: 0.9rem;
-        color: #cbd5e0;
-        border: 1px solid rgba(100, 255, 218, 0.2);
-    }
-    
-    .powered-by {
-        font-size: 0.9rem;
-        color: #a0aec0;
-        font-style: italic;
-        text-align: center;
-        display: block;
-    }
-    
-    /* Search Strategy Indicators */
-    .search-strategy {
-        margin: 1.5rem 0;
-        text-align: center;
-    }
-    
-    .strategy-indicator {
-        background: rgba(15, 15, 35, 0.8);
-        border: 1px solid rgba(100, 255, 218, 0.3);
-        border-radius: 20px;
-        padding: 1.5rem 2rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 1rem;
-        backdrop-filter: blur(15px);
-        transition: all 0.3s ease;
-    }
-    
-    .strategy-indicator:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    }
-    
-    .strategy-icon {
-        font-size: 1.5rem;
-    }
-    
-    .strategy-text {
-        font-size: 1.1rem;
-        font-weight: 500;
-        color: #f1f5f9;
-    }
-    
-    .result-count {
-        color: #00ff88;
-        font-weight: 600;
-    }
-    
-    .strategy-bar {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        height: 3px;
-        width: 100%;
-        border-radius: 0 0 20px 20px;
-        background: linear-gradient(90deg, transparent, #00ff88, transparent);
-        animation: progressBar 2s ease-in-out;
-    }
-    
-    .vector-bar {
-        background: linear-gradient(90deg, transparent, #ffa500, transparent);
-    }
-    
-    .web-bar {
-        background: linear-gradient(90deg, transparent, #1e90ff, transparent);
-    }
-    
-    .basic-bar {
-        background: linear-gradient(90deg, transparent, #ffc107, transparent);
-    }
-    
-    @keyframes progressBar {
-        0% { width: 0%; }
-        100% { width: 100%; }
-    }
-    
-    /* Result Meta Information */
-    .result-meta {
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid rgba(100, 255, 218, 0.2);
-        font-size: 0.9rem;
-        color: #a0aec0;
-        font-style: italic;
-    }
-    
-    /* Basic Mode Styling */
-    .ai-response-container.basic-mode {
-        background: rgba(255, 193, 7, 0.1);
-        border: 2px solid rgba(255, 193, 7, 0.4);
-        border-radius: 25px;
-        padding: 2.5rem;
-        margin: 2rem 0;
-        border-left: 6px solid #ffc107;
-    }
-    
-    .ai-response-container.basic-mode .ai-response-header {
-        color: #ffc107;
-    }
-    
-    .ai-response-container.basic-mode .response-indicator.basic {
-        background: #ffc107;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        animation: pulse 2s infinite;
-    }
-    
-    .ai-response-container.basic-mode .response-footer {
-        color: #ffc107;
-        font-size: 0.9rem;
-        margin-top: 1rem;
-        text-align: center;
-        opacity: 0.8;
-    }
-    
-    /* System Error Styling */
-    .system-error {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 60vh;
-        padding: 2rem;
-    }
-    
-    .error-container {
-        background: rgba(15, 15, 35, 0.9);
-        border: 2px solid rgba(255, 107, 107, 0.4);
-        border-radius: 25px;
-        padding: 3rem;
-        max-width: 600px;
-        text-align: center;
-        backdrop-filter: blur(20px);
-        box-shadow: 
-            0 20px 60px rgba(0, 0, 0, 0.4),
-            0 0 80px rgba(255, 107, 107, 0.1);
-    }
-    
-    .error-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-    }
-    
-    .error-title {
-        font-size: 1.8rem;
-        font-weight: 600;
-        color: #ff6b6b;
-        margin-bottom: 1rem;
-    }
-    
-    .error-message {
-        font-size: 1.2rem;
-        color: #e1e8ed;
-        margin-bottom: 2rem;
-        line-height: 1.6;
-    }
-    
-    .error-details {
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin: 1.5rem 0;
-        text-align: left;
-    }
-    
-    .error-details p {
-        margin: 0.5rem 0;
-        color: #cbd5e0;
-    }
-    
-    .error-details code {
-        background: rgba(100, 255, 218, 0.1);
-        border: 1px solid rgba(100, 255, 218, 0.3);
-        border-radius: 8px;
-        padding: 0.8rem;
-        display: block;
-        margin: 1rem 0;
-        color: #64ffda;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.9rem;
-    }
-    
-    .error-note {
-        font-size: 1rem;
-        color: #a0aec0;
-        font-style: italic;
-        margin-top: 1.5rem;
-    }
-
     /* Professional Header Styling */
     .main-header {
         text-align: center;
@@ -716,15 +270,16 @@ st.markdown("""
             #00ff88 50%, 
             #64ffda 75%, 
             #ffffff 100%);
-        background-size: 300% 300%;
+        background-size: 200% 200%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         margin-bottom: 1rem;
-        text-shadow: 0 0 30px rgba(100, 255, 218, 0.3);
-        animation: gradientShift 4s ease-in-out infinite alternate, titleGlow 3s ease-in-out infinite alternate;
+        text-shadow: 0 0 20px rgba(100, 255, 218, 0.3);
+        animation: gradientShift 6s ease-in-out infinite alternate;
         letter-spacing: 2px;
         line-height: 1.1;
+        will-change: background-position;
     }
     
     .app-subtitle {
@@ -733,7 +288,6 @@ st.markdown("""
         color: #e2e8f0;
         margin-bottom: 1rem;
         opacity: 0.9;
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         letter-spacing: 1px;
     }
     
@@ -748,341 +302,121 @@ st.markdown("""
         line-height: 1.6;
     }
 
-    /* CSS Animations */
     @keyframes gradientShift {
         0% { background-position: 0% 50%; }
         100% { background-position: 100% 50%; }
     }
     
-    @keyframes titleGlow {
-        0% { text-shadow: 0 0 20px rgba(100, 255, 218, 0.2); }
-        100% { text-shadow: 0 0 40px rgba(100, 255, 218, 0.5); }
-    }
-    
-    @keyframes animate-fade-in {
-        0% { 
-            opacity: 0; 
-            transform: translateY(30px); 
-        }
-        100% { 
-            opacity: 1; 
-            transform: translateY(0); 
-        }
-    }
-    
-    @keyframes animate-slide-up {
-        0% { 
-            opacity: 0; 
-            transform: translateY(50px); 
-        }
-        100% { 
-            opacity: 1; 
-            transform: translateY(0); 
-        }
-    }
-    
-    .animate-fade-in {
-        animation: animate-fade-in 1.2s ease-out forwards;
-    }
-    
-    .animate-slide-up {
-        animation: animate-slide-up 1s ease-out forwards;
-    }
-
-    /* Professional Token Display */
-    .token-display {
-        background: rgba(15, 15, 35, 0.8);
-        border: 1px solid rgba(100, 255, 218, 0.3);
-        border-radius: 15px;
-        padding: 1.5rem;
-        text-align: center;
-        backdrop-filter: blur(20px);
+    /* Help Button Styling */
+    .help-button {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 1000;
+        background: linear-gradient(135deg, 
+            rgba(100, 255, 218, 0.9) 0%, 
+            rgba(0, 255, 136, 0.8) 100%) !important;
+        border: none !important;
+        border-radius: 50% !important;
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 1.5rem !important;
+        color: #0f172a !important;
+        cursor: pointer !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         box-shadow: 
-            0 10px 30px rgba(0, 0, 0, 0.3),
-            0 0 40px rgba(100, 255, 218, 0.1);
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
+            0 8px 25px rgba(0, 255, 136, 0.3),
+            0 4px 15px rgba(0, 0, 0, 0.2) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     
-    .token-display:hover {
-        transform: translateY(-5px);
-        border-color: rgba(100, 255, 218, 0.5);
+    .help-button:hover {
+        transform: translateY(-3px) scale(1.1) !important;
         box-shadow: 
-            0 15px 40px rgba(0, 0, 0, 0.4),
-            0 0 60px rgba(100, 255, 218, 0.2);
+            0 12px 35px rgba(0, 255, 136, 0.4),
+            0 6px 20px rgba(0, 0, 0, 0.3) !important;
     }
     
-    .token-display::before {
-        content: '';
-        position: absolute;
+    /* Help Modal Styling */
+    .help-modal {
+        position: fixed;
         top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(100, 255, 218, 0.1), transparent);
-        transition: left 0.5s ease;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
     }
     
-    .token-display:hover::before {
-        left: 100%;
-    }
-    
-    .token-number {
-        display: block;
-        font-size: 2rem;
-        font-weight: 700;
-        color: #64ffda;
-        margin-bottom: 0.5rem;
-        text-shadow: 0 0 10px rgba(100, 255, 218, 0.3);
-    }
-    
-    .token-label {
-        display: block;
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: #cbd5e0;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    /* Query Container Styling */
-    .query-container {
-        padding: 2rem 0;
-        position: relative;
-        z-index: 200;
-        background: transparent;
-    }
-    
-    .query-wrapper {
-        max-width: 800px;
-        margin: 0 auto;
-        position: relative;
-        z-index: 200;
-        background: rgba(15, 15, 35, 0.7);
+    .help-content {
+        background: rgba(15, 15, 35, 0.95);
+        border: 2px solid rgba(100, 255, 218, 0.3);
+        border-radius: 25px;
         padding: 3rem;
-        border-radius: 30px;
-        border: 1px solid rgba(100, 255, 218, 0.2);
-        backdrop-filter: blur(30px);
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-    }
-    
-    /* Make sure all content is visible */
-    .stApp > div:first-child {
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        color: #f1f5f9;
+        font-family: 'Inter', sans-serif;
+        backdrop-filter: blur(25px);
+        box-shadow: 
+            0 20px 60px rgba(0, 0, 0, 0.5),
+            0 0 100px rgba(100, 255, 218, 0.2);
+        border-left: 6px solid #00ff88;
         position: relative;
-        z-index: 10;
     }
     
-    /* Ensure main content container is above background */
-    .main {
-        position: relative;
-        z-index: 100;
+    .help-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        color: #64ffda;
+        font-size: 2rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
     }
     
-    /* Force visibility of search elements */
-    .stTextInput, .stButton, .stExpander {
-        position: relative !important;
-        z-index: 300 !important;
+    .help-close:hover {
+        color: #00ff88;
+        transform: scale(1.1);
     }
     
-    .stTextInput > div, .stButton > div, .stExpander > div {
-        position: relative !important;
-        z-index: 300 !important;
+    /* Enhanced details/summary styling */
+    details summary {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
-
+    
+    details summary:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 
+            0 8px 25px rgba(0, 255, 136, 0.3),
+            0 4px 15px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    details[open] summary {
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        margin-bottom: 0 !important;
+    }
+    
     /* Hide Streamlit elements */
     .stDeployButton { display: none; }
     #MainMenu { visibility: hidden; }
     footer { visibility: hidden; }
     header { visibility: hidden; }
-    
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .stTextInput input {
-            padding: 1.25rem 3rem 1.25rem 2.5rem !important;
-            font-size: 1rem !important;
-        }
-        
-        .stButton button {
-            padding: 1rem 2rem !important;
-            font-size: 1rem !important;
-        }
-        
-        .result-card {
-            padding: 1.5rem;
-            margin: 1rem 0;
-            border-radius: 16px;
-        }
-        
-        .ai-response {
-            padding: 2rem 1.5rem;
-            border-radius: 20px;
-        }
-        
-        .stApp::before {
-            width: 20px;
-            height: 20px;
-            box-shadow: 
-                0 0 20px rgba(255, 215, 0, 0.6),
-                0 0 40px rgba(255, 215, 0, 0.3);
-        }
-        
-        .planet:nth-of-type(1) { transform-origin: 40px 0; }
-        .planet:nth-of-type(2) { transform-origin: 55px 0; }
-        .planet:nth-of-type(3) { transform-origin: 70px 0; }
-        .planet:nth-of-type(4) { transform-origin: 85px 0; }
-        .planet:nth-of-type(5) { 
-            transform-origin: 110px 0;
-            width: 10px;
-            height: 10px;
-        }
-        .planet:nth-of-type(6) { 
-            transform-origin: 130px 0;
-            width: 8px;
-            height: 8px;
-        }
-        .planet:nth-of-type(7) { transform-origin: 150px 0; }
-        .planet:nth-of-type(8) { transform-origin: 170px 0; }
-        .planet:nth-of-type(9) { transform-origin: 190px 0; }
-        
-        .error-container {
-            padding: 2rem 1.5rem;
-            margin: 1rem;
-            max-width: 90%;
-        }
-        
-        .error-title {
-            font-size: 1.5rem;
-        }
-        
-        .error-message {
-            font-size: 1rem;
-        }
-        
-        .app-title {
-            font-size: 2.5rem;
-            letter-spacing: 1px;
-        }
-        
-        .app-subtitle {
-            font-size: 1.2rem;
-        }
-        
-        .header-description {
-            font-size: 1rem;
-        }
-        
-        .main-header {
-            padding: 2rem 1rem;
-        }
-        
-        .token-display {
-            padding: 1rem;
-        }
-        
-        .token-number {
-            font-size: 1.5rem;
-        }
-    }
-    
-    @media (max-width: 480px) {
-        .stTextInput input {
-            padding: 1rem 2rem !important;
-            font-size: 0.875rem !important;
-        }
-        
-        .stButton button {
-            padding: 0.875rem 1.5rem !important;
-            font-size: 0.875rem !important;
-        }
-        
-        .result-card, .ai-response {
-            margin: 0.75rem 0;
-        }
-        
-        .stApp::before {
-            width: 15px;
-            height: 15px;
-            box-shadow: 
-                0 0 15px rgba(255, 215, 0, 0.4),
-                0 0 30px rgba(255, 215, 0, 0.2);
-        }
-        
-        .planet:nth-of-type(1) { transform-origin: 30px 0; width: 3px; height: 3px; }
-        .planet:nth-of-type(2) { transform-origin: 40px 0; width: 4px; height: 4px; }
-        .planet:nth-of-type(3) { transform-origin: 50px 0; width: 5px; height: 5px; }
-        .planet:nth-of-type(4) { transform-origin: 60px 0; width: 4px; height: 4px; }
-        .planet:nth-of-type(5) { 
-            transform-origin: 80px 0;
-            width: 8px;
-            height: 8px;
-        }
-        .planet:nth-of-type(6) { 
-            transform-origin: 95px 0;
-            width: 6px;
-            height: 6px;
-        }
-        .planet:nth-of-type(7) { transform-origin: 110px 0; width: 5px; height: 5px; }
-        .planet:nth-of-type(8) { transform-origin: 125px 0; width: 5px; height: 5px; }
-        .planet:nth-of-type(9) { transform-origin: 140px 0; width: 2px; height: 2px; }
-        
-        .error-container {
-            padding: 1.5rem 1rem;
-            margin: 0.5rem;
-            max-width: 95%;
-        }
-        
-        .error-icon {
-            font-size: 2rem;
-        }
-        
-        .error-title {
-            font-size: 1.3rem;
-        }
-        
-        .error-message {
-            font-size: 0.9rem;
-        }
-        
-        .error-details code {
-            font-size: 0.8rem;
-            padding: 0.6rem;
-        }
-        
-        .app-title {
-            font-size: 2rem;
-            letter-spacing: 0.5px;
-        }
-        
-        .app-subtitle {
-            font-size: 1rem;
-        }
-        
-        .header-description {
-            font-size: 0.9rem;
-        }
-        
-        .main-header {
-            padding: 1.5rem 0.5rem;
-        }
-        
-        .token-display {
-            padding: 0.8rem;
-        }
-        
-        .token-number {
-            font-size: 1.2rem;
-        }
-        
-        .token-label {
-            font-size: 0.8rem;
-        }
-    }
 </style>
 """, unsafe_allow_html=True)
 
 class IntelliSearch:
-    """Enhanced Professional RAG System with Advanced UI - Streamlit Cloud Optimized"""
+    """Enhanced Professional RAG System with Advanced UI"""
     
     def __init__(self):
         self.rag_system = RAG_SYSTEM
@@ -1107,47 +441,11 @@ class IntelliSearch:
             'response_tokens': 0
         }
         
-        # Streamlit Cloud optimizations
-        self.cache_enabled = True
-        self.max_cache_size = 100  # Limit cache size for memory management
-        self.response_cache = {}
-        self.initialization_cache = {}
-        
         self.setup_llm()
     
     def count_tokens(self, text: str) -> int:
         """Simple token counting approximation (1 token ≈ 4 characters)"""
         return len(text) // 4 if text else 0
-    
-    def _manage_cache_memory(self):
-        """Manage cache size to prevent memory issues on Streamlit Cloud"""
-        if len(self.response_cache) > self.max_cache_size:
-            # Remove oldest entries (simple FIFO cache management)
-            cache_keys = list(self.response_cache.keys())
-            for key in cache_keys[:len(cache_keys)//2]:  # Remove half of cache
-                del self.response_cache[key]
-            logger.info(f"Cache cleaned: reduced to {len(self.response_cache)} entries")
-    
-    def _get_cached_response(self, query: str) -> Optional[Dict[str, Any]]:
-        """Get cached response for query if available"""
-        if not self.cache_enabled:
-            return None
-        
-        cache_key = query.lower().strip()
-        if cache_key in self.response_cache:
-            logger.info(f"Cache hit for query: {query[:50]}...")
-            return self.response_cache[cache_key]
-        return None
-    
-    def _cache_response(self, query: str, response: Dict[str, Any]):
-        """Cache response for future use"""
-        if not self.cache_enabled:
-            return
-        
-        self._manage_cache_memory()
-        cache_key = query.lower().strip()
-        self.response_cache[cache_key] = response
-        logger.info(f"Response cached for query: {query[:50]}...")
         
     def update_token_metrics(self, query: str, response: str):
         """Update token usage metrics"""
@@ -1157,7 +455,7 @@ class IntelliSearch:
         self.token_metrics['query_tokens'] = query_tokens
         self.token_metrics['response_tokens'] = response_tokens
         self.token_metrics['session_tokens'] += query_tokens + response_tokens
-        
+    
     def setup_llm(self):
         """Initialize LLM connections"""
         try:
@@ -1171,16 +469,14 @@ class IntelliSearch:
             self.openai_client = openai.OpenAI(api_key=openai_key)
     
     async def initialize_rag_system(self):
-        """Initialize the enhanced RAG system V2"""
+        """Initialize the RAG system"""
         if not RAG_AVAILABLE or not self.rag_system:
             return False
             
         try:
-            # Initialize the RAG system
             success = await self.rag_system.initialize()
             
             if success:
-                # Configure the system
                 self.rag_system.configure(
                     similarity_threshold=self.similarity_threshold,
                     enable_web_fallback=self.enable_web_fallback,
@@ -1188,10 +484,6 @@ class IntelliSearch:
                     max_web_results=self.max_results
                 )
                 
-                # Index the database
-                await self.rag_system.index_database(force_reindex=False)
-                
-                # Get system status for user display
                 self.system_status = self.rag_system.get_system_status()
                 self.is_initialized = True
                 
@@ -1224,7 +516,7 @@ class IntelliSearch:
             response = self.openai_client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "You are an intelligent assistant. Provide accurate responses using only the provided context."},
+                    {"role": "system", "content": "You are an intelligent assistant. Provide accurate responses using the provided context."},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=1000,
@@ -1251,21 +543,8 @@ class IntelliSearch:
     
     def render_header(self):
         """Render space-themed header"""
-        # Add solar system planets to the page
         st.markdown("""
-        <div class="planet"></div>
-        <div class="planet"></div>
-        <div class="planet"></div>
-        <div class="planet"></div>
-        <div class="planet"></div>
-        <div class="planet"></div>
-        <div class="planet"></div>
-        <div class="planet"></div>
-        <div class="planet"></div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div class="main-header animate-fade-in">
+        <div class="main-header">
             <div class="app-title">🚀 IntelliSearch</div>
             <div class="app-subtitle">
                 Advanced Space Intelligence & Research System
@@ -1281,212 +560,164 @@ class IntelliSearch:
             col1, col2, col3 = st.columns([1, 1, 1])
             with col1:
                 st.markdown(f"""
-                <div class="token-display">
-                    <span class="token-number">{self.token_metrics['query_tokens']}</span>
-                    <span class="token-label">Query Tokens</span>
+                <div style="background: rgba(15, 15, 35, 0.8); border: 1px solid rgba(100, 255, 218, 0.3); border-radius: 15px; padding: 1rem; text-align: center; backdrop-filter: blur(20px);">
+                    <span style="display: block; font-size: 1.5rem; font-weight: 700; color: #64ffda; margin-bottom: 0.5rem;">{self.token_metrics['query_tokens']}</span>
+                    <span style="display: block; font-size: 0.9rem; font-weight: 500; color: #cbd5e0; text-transform: uppercase; letter-spacing: 1px;">Query Tokens</span>
                 </div>
                 """, unsafe_allow_html=True)
             with col2:
                 st.markdown(f"""
-                <div class="token-display">
-                    <span class="token-number">{self.token_metrics['response_tokens']}</span>
-                    <span class="token-label">Response Tokens</span>
+                <div style="background: rgba(15, 15, 35, 0.8); border: 1px solid rgba(100, 255, 218, 0.3); border-radius: 15px; padding: 1rem; text-align: center; backdrop-filter: blur(20px);">
+                    <span style="display: block; font-size: 1.5rem; font-weight: 700; color: #64ffda; margin-bottom: 0.5rem;">{self.token_metrics['response_tokens']}</span>
+                    <span style="display: block; font-size: 0.9rem; font-weight: 500; color: #cbd5e0; text-transform: uppercase; letter-spacing: 1px;">Response Tokens</span>
                 </div>
                 """, unsafe_allow_html=True)
             with col3:
                 st.markdown(f"""
-                <div class="token-display">
-                    <span class="token-number">{self.token_metrics['session_tokens']}</span>
-                    <span class="token-label">Session Total</span>
+                <div style="background: rgba(15, 15, 35, 0.8); border: 1px solid rgba(100, 255, 218, 0.3); border-radius: 15px; padding: 1rem; text-align: center; backdrop-filter: blur(20px);">
+                    <span style="display: block; font-size: 1.5rem; font-weight: 700; color: #64ffda; margin-bottom: 0.5rem;">{self.token_metrics['session_tokens']}</span>
+                    <span style="display: block; font-size: 0.9rem; font-weight: 500; color: #cbd5e0; text-transform: uppercase; letter-spacing: 1px;">Session Total</span>
                 </div>
                 """, unsafe_allow_html=True)
     
     def render_search_results(self, rag_result: Dict[str, Any]):
-        """Render search results with enhanced animations for V2 system"""
+        """Render Sources & References section with enhanced linking"""
         method = rag_result.get('method', 'unknown')
         sources = rag_result.get('sources', [])
         confidence = rag_result.get('confidence', 0.0)
         
-        # Enhanced search strategy indicator with animations
-        if method == 'semantic_search':
-            st.markdown(f"""
-            <div class="search-strategy">
-                <div class="strategy-indicator strategy-local animate-slide-in">
-                    <span class="strategy-icon">🧠</span>
-                    <span class="strategy-text">
-                        Semantic Search - Found <span class="result-count animate-counter">{len(sources)}</span> 
-                        relevant sources (Confidence: {confidence:.1%})
-                    </span>
-                    <div class="strategy-bar local-bar"></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        elif method == 'vector_search':
-            st.markdown(f"""
-            <div class="search-strategy">
-                <div class="strategy-indicator strategy-vector animate-slide-in">
-                    <span class="strategy-icon">📊</span>
-                    <span class="strategy-text">
-                        Vector Search - Found <span class="result-count animate-counter">{len(sources)}</span> 
-                        relevant documents
-                    </span>
-                    <div class="strategy-bar vector-bar"></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        elif method == 'web_search':
-            st.markdown(f"""
-            <div class="search-strategy">
-                <div class="strategy-indicator strategy-web animate-slide-in">
-                    <span class="strategy-icon">🌐</span>
-                    <span class="strategy-text">
-                        Web Search - Retrieved <span class="result-count animate-counter">{len(sources)}</span> 
-                        external sources
-                    </span>
-                    <div class="strategy-bar web-bar"></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        elif method == 'basic_response':
-            st.markdown(f"""
-            <div class="search-strategy">
-                <div class="strategy-indicator strategy-basic animate-slide-in">
-                    <span class="strategy-icon">💡</span>
-                    <span class="strategy-text">
-                        Basic Response Mode - Guidance provided
-                    </span>
-                    <div class="strategy-bar basic-bar"></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
         # Display sources if available
         if sources:
-            with st.expander(f"Sources ({len(sources)})", expanded=False):
-                for source in sources:
-                    # Handle both V1 and V2 source formats
-                    if isinstance(source, dict):
-                        if 'content' in source:  # V2 format
-                            metadata = source.get('metadata', {})
-                            content = source.get('content', '')[:400]
-                            similarity = source.get('similarity', 0.0)
-                            st.markdown(f"""
-                            <div class="result-card">
-                                <div class="result-title">{metadata.get('title', source.get('id', 'Source'))}</div>
-                                <div class="result-content">
-                                    {content}{'...' if len(source.get('content', '')) > 400 else ''}
-                                </div>
-                                <div class="result-meta">Similarity: {similarity:.1%}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        else:  # Handle web search results
-                            url = source.get('url', '#')
-                            st.markdown(f"""
-                            <div class="result-card">
-                                <div class="result-title">{source.get('title', 'External Source')}</div>
-                                <div class="result-content">
-                                    {source.get('snippet', source.get('content', 'External content'))[:400]}...
-                                </div>
-                                <a href="{url}" target="_blank" class="source-link">
-                                    View Source →
+            # Create dedicated Sources & References section
+            st.markdown("""
+            <div style="margin: 2rem 0; text-align: center;">
+                <h2 style="color: #00ff88; font-size: 1.8rem; font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
+                    📚 Sources & References
+                </h2>
+                <p style="color: #cbd5e0; font-size: 1rem; opacity: 0.8; margin-bottom: 1.5rem;">
+                    Click on any source to view the full article
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Display method info
+            if method == 'semantic_search':
+                st.info(f"🧠 **Semantic Search** - Found {len(sources)} relevant sources (Confidence: {confidence:.1%})")
+            elif method == 'web_search':
+                st.info(f"🌐 **Web Search** - Retrieved {len(sources)} external sources")
+            elif method == 'basic_response':
+                st.info("💡 **Basic Response Mode** - Guidance provided")
+            
+            # Display each source with enhanced formatting
+            for i, source in enumerate(sources, 1):
+                if isinstance(source, dict):
+                    content = source.get('content', '')[:400]
+                    similarity = source.get('similarity', 0.0)
+                    metadata = source.get('metadata', {})
+                    source_type = source.get('source_type', 'local')
+                    
+                    # Extract source information
+                    title = metadata.get('title', f'Source {i}')
+                    source_name = metadata.get('source', 'Unknown Source')
+                    category = metadata.get('category', 'general')
+                    url = metadata.get('url', '')
+                    
+                    # Create enhanced source display
+                    if source_type == 'web' and url:
+                        # Web source with full URL display
+                        source_header = f"""
+                        <div style="font-size: 1.2rem; margin-bottom: 1rem;">
+                            <div style="margin-bottom: 0.5rem;">
+                                <a href="{url}" target="_blank" style="color: #00ff88; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
+                                    🔗 {title}
                                 </a>
                             </div>
-                            """, unsafe_allow_html=True)
+                            <div style="font-size: 0.9rem; color: #64ffda; font-family: 'JetBrains Mono', monospace; background: rgba(100, 255, 218, 0.1); padding: 0.5rem 1rem; border-radius: 8px; border-left: 3px solid #64ffda; word-break: break-all;">
+                                📄 Full Article: <a href="{url}" target="_blank" style="color: #00ff88; text-decoration: underline;">{url}</a>
+                            </div>
+                        </div>
+                        """
+                    else:
+                        # Local source
+                        source_header = f"""
+                        <div style="font-size: 1.2rem; margin-bottom: 1rem;">
+                            <div style="margin-bottom: 0.5rem;">
+                                <span style="color: #64ffda; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
+                                    📚 {title}
+                                </span>
+                            </div>
+                            <div style="font-size: 0.9rem; color: #a0aec0; font-family: 'JetBrains Mono', monospace; background: rgba(160, 174, 192, 0.1); padding: 0.5rem 1rem; border-radius: 8px; border-left: 3px solid #a0aec0;">
+                                📂 Local Knowledge Base
+                            </div>
+                        </div>
+                        """
+                    
+                    # Source type and metadata
+                    type_indicator = "🌐 Web Source" if source_type == 'web' else "📖 Local Knowledge"
+                    
+                    # Create the complete source card
+                    st.markdown(f"""
+                    <div class="result-card" style="margin: 1.5rem 0; border-left: 4px solid {'#00ff88' if source_type == 'web' else '#64ffda'};">
+                        <div style="border-bottom: 1px solid rgba(100, 255, 218, 0.2); padding-bottom: 1rem; margin-bottom: 1rem;">
+                            {source_header}
+                            <div style="font-size: 0.85rem; color: #a0aec0; display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+                                <span style="background: rgba({'0, 255, 136' if source_type == 'web' else '100, 255, 218'}, 0.2); padding: 0.25rem 0.75rem; border-radius: 12px; font-weight: 600;">{type_indicator}</span>
+                                <span>📂 {category.replace('_', ' ').title()}</span>
+                                {f'<span>⚡ Relevance: {similarity:.1%}</span>' if similarity > 0 else ''}
+                                <span>🔢 Source #{i}</span>
+                            </div>
+                        </div>
+                        <div class="result-content" style="line-height: 1.7; font-size: 1rem; color: #f1f5f9;">
+                            {content}{'...' if len(source.get('content', '')) > 400 else ''}
+                        </div>
+                        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(100, 255, 218, 0.2); font-size: 0.85rem; color: #64ffda; text-align: right; font-style: italic;">
+                            Source: {source_name}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
     
     async def handle_basic_query(self, user_question: str):
         """Handle queries in basic mode when full RAG is unavailable"""
-        # Show processing indicator
-        processing_placeholder = st.empty()
-        processing_placeholder.markdown("""
-        <div class="processing-container">
-            <div class="processing-indicator">
-                <span class="processing-icon">🔍</span>
-                <span>Processing in Basic Mode...</span>
-                <div class="processing-dots">
-                    <span class="dot dot-1"></span>
-                    <span class="dot dot-2"></span>
-                    <span class="dot dot-3"></span>
-                </div>
+        st.info("🔍 Running in Basic Mode - Advanced RAG features unavailable")
+        
+        basic_response = f"""
+        **Basic Mode Response for: "{user_question}"**
+        
+        ⚠️ **Limited Functionality**: Advanced RAG features are currently unavailable.
+        
+        🌟 **Suggestions**:
+        - Try rephrasing your question for better results
+        - Check if you're looking for general information
+        - Consider the query context and related topics
+        
+        💡 **Alternative**: You can try searching the web directly for: "{user_question}"
+        """
+        
+        st.markdown(f"""
+        <div class="ai-response">
+            <div style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+                🔍 Basic Mode Response
+            </div>
+            <div style="line-height: 1.8; font-size: 1.125rem;">
+                {basic_response.replace(chr(10), '<br>')}
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
-        try:
-            # Provide basic response with helpful information
-            basic_response = f"""
-            **Basic Mode Response for: "{user_question}"**
-            
-            🔍 **Current Status**: Running in Basic Mode
-            
-            📝 **Your Query**: {user_question}
-            
-            ⚠️ **Limited Functionality**: Advanced RAG features are currently unavailable, but here's what I can tell you:
-            
-            🌟 **Suggestions**:
-            - Try rephrasing your question for better web search results
-            - Check if you're looking for general information that might be available online
-            - Consider the query context and related topics
-            
-            🔧 **To Enable Full Features**: The system needs additional AI packages for advanced search and retrieval capabilities.
-            
-            💡 **Alternative**: You can try searching the web directly for: "{user_question}"
-            """
-            
-            processing_placeholder.empty()
-            
-            # Display the basic response with nice formatting
-            st.markdown("""
-            <div class="ai-response-container basic-mode">
-                <div class="ai-response-header">
-                    <span class="response-icon">🔍</span>
-                    <span class="response-title">Basic Mode Response</span>
-                    <div class="response-indicator basic"></div>
-                </div>
-                <div class="ai-response-content">
-                    """ + basic_response.replace('\n', '<br>') + """
-                </div>
-                <div class="response-footer">
-                    <span class="powered-by">Basic Mode - Limited Functionality</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-        except Exception as e:
-            processing_placeholder.empty()
-            st.error(f"Error in basic mode: {str(e)}")
     
     async def process_query(self, user_question: str):
-        """Process user query with enhanced loading states and caching"""
+        """Process user query"""
         if not self.is_initialized:
-            # Handle degraded mode - provide basic functionality
             await self.handle_basic_query(user_question)
-            return
-        
-        # Check cache first for performance optimization
-        cached_result = self._get_cached_response(user_question)
-        if cached_result:
-            # Display cached results
-            self.render_search_results(cached_result)
-            await self.display_enhanced_response(cached_result)
-            
-            # Update metrics for cached response
-            response_text = cached_result.get('response', '')
-            self.update_token_metrics(user_question, response_text) 
-            self.performance_metrics['total_queries'] += 1
             return
         
         # Enhanced processing indicator
         processing_placeholder = st.empty()
         processing_placeholder.markdown("""
-        <div class="processing-container">
-            <div class="processing-indicator">
-                <span class="processing-icon">⚡</span>
-                <span>Processing your query...</span>
-                <div class="processing-dots">
-                    <span class="dot dot-1"></span>
-                    <span class="dot dot-2"></span>
-                    <span class="dot dot-3"></span>
-                </div>
+        <div style="display: flex; justify-content: center; align-items: center; padding: 2rem;">
+            <div style="background: rgba(15, 15, 35, 0.9); border: 2px solid rgba(100, 255, 218, 0.3); border-radius: 20px; padding: 2rem; text-align: center; backdrop-filter: blur(20px);">
+                <div style="font-size: 2rem; margin-bottom: 1rem;">⚡</div>
+                <div style="font-size: 1.2rem; color: #64ffda; font-weight: 600; margin-bottom: 0.5rem;">Processing Your Query</div>
+                <div style="font-size: 1rem; color: #cbd5e0;">Searching knowledge base and generating response...</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1495,16 +726,13 @@ class IntelliSearch:
             # Track query metrics
             start_time = time.time()
             
-            # Execute RAG pipeline with Enhanced V2 system
+            # Execute RAG pipeline
             rag_result = await self.rag_system.query(user_question)
-            
-            # Cache the result for future use
-            self._cache_response(user_question, rag_result)
             
             # Update token metrics
             response_text = rag_result.get('response', '')
             self.update_token_metrics(user_question, response_text)
-            
+                
             # Update performance metrics
             end_time = time.time()
             query_time = rag_result.get('query_time', end_time - start_time)
@@ -1514,7 +742,7 @@ class IntelliSearch:
                 self.performance_metrics['total_queries']
             )
             
-            # Add to query history (limit history for memory management)
+            # Add to query history
             self.query_history.append({
                 'query': user_question,
                 'timestamp': time.time(),
@@ -1523,188 +751,175 @@ class IntelliSearch:
                 'confidence': rag_result.get('confidence', 0.0)
             })
             
-            # Limit query history size for memory management
-            if len(self.query_history) > 50:
-                self.query_history = self.query_history[-25:]  # Keep last 25 queries
-            
             # Clear processing indicator
             processing_placeholder.empty()
             
-            # Display results with animation
-            self.render_search_results(rag_result)
-            
-            # Generate and display response directly from V2 system
+            # Generate and display AI response FIRST
             if rag_result.get('response'):
-                await self.display_enhanced_response(rag_result)
+                await self.display_response(rag_result)
             else:
-                st.warning("No response generated. Please try rephrasing your query.")
+                st.warning("🔍 No response generated. Please try rephrasing your query or check if the topic is covered in our knowledge base.")
+            
+            # Display sources AFTER the AI response
+            self.render_search_results(rag_result)
                 
         except Exception as e:
             processing_placeholder.empty()
-            # Update failure rate
+            # Enhanced error handling with more helpful messages
             self.performance_metrics['success_rate'] = max(0, self.performance_metrics['success_rate'] - 5)
-            st.error(f"Query processing failed: {str(e)}")
+            
+            # Categorize error types for better user guidance
+            if "timeout" in str(e).lower():
+                st.error("⏱️ **Timeout Error**: The request took too long to process. Please try a simpler query or try again in a moment.")
+            elif "connection" in str(e).lower() or "network" in str(e).lower():
+                st.error("🌐 **Connection Error**: Unable to connect to required services. Please check your internet connection and try again.")
+            elif "model" in str(e).lower() or "embedding" in str(e).lower():
+                st.error("🤖 **AI Model Error**: There was an issue with the AI processing. Please try rephrasing your query.")
+            else:
+                st.error(f"⚠️ **Processing Error**: {str(e)}")
+                
+            # Provide helpful suggestions
+            st.info("💡 **Suggestions**: Try a simpler query, check your spelling, or wait a moment and try again.")
     
-    async def display_enhanced_response(self, rag_result: Dict[str, Any]):
-        """Display response from Enhanced RAG System V2"""
+    def _process_source_citations(self, text: str, sources: List[Dict]) -> str:
+        """Convert [Source X] citations to enhanced clickable links with article information"""
+        import re
+        
+        def replace_citation(match):
+            source_num = int(match.group(1))
+            if 1 <= source_num <= len(sources):
+                source = sources[source_num - 1]
+                metadata = source.get('metadata', {})
+                title = metadata.get('title', f'Source {source_num}')
+                source_type = source.get('source_type', 'local')
+                
+                # Create enhanced citation with hover information
+                if source_type == 'web' and metadata.get('url'):
+                    url = metadata.get('url')
+                    # Enhanced web source citation with full article link indication
+                    return f'''<a href="{url}" target="_blank" 
+                        style="color: #00ff88; text-decoration: none; font-weight: 600; 
+                               border: 1px solid rgba(0, 255, 136, 0.4); 
+                               padding: 0.3rem 0.7rem; border-radius: 0.7rem; 
+                               background: rgba(0, 255, 136, 0.15); 
+                               font-size: 0.95rem; display: inline-flex; 
+                               align-items: center; gap: 0.3rem;
+                               transition: all 0.3s ease;
+                               box-shadow: 0 2px 8px rgba(0, 255, 136, 0.2);"
+                        title="🔗 {title} - Click to view full article: {url}"
+                        onmouseover="this.style.background='rgba(0, 255, 136, 0.25)'; this.style.transform='translateY(-1px)'"
+                        onmouseout="this.style.background='rgba(0, 255, 136, 0.15)'; this.style.transform='translateY(0px)'">
+                        🔗 Source {source_num}
+                        <span style="font-size: 0.8rem; opacity: 0.8;">📄</span>
+                    </a>'''
+                else:
+                    # Enhanced local source citation
+                    return f'''<span 
+                        style="color: #64ffda; font-weight: 600; 
+                               border: 1px solid rgba(100, 255, 218, 0.4); 
+                               padding: 0.3rem 0.7rem; border-radius: 0.7rem; 
+                               background: rgba(100, 255, 218, 0.15); 
+                               font-size: 0.95rem; display: inline-flex; 
+                               align-items: center; gap: 0.3rem;
+                               box-shadow: 0 2px 8px rgba(100, 255, 218, 0.2);"
+                        title="📚 {title} - Local knowledge base">
+                        📚 Source {source_num}
+                        <span style="font-size: 0.8rem; opacity: 0.8;">📂</span>
+                    </span>'''
+            return match.group(0)
+        
+        # Replace [Source X] patterns with enhanced clickable links
+        return re.sub(r'\[Source (\d+)\]', replace_citation, text)
+
+    async def display_response(self, rag_result: Dict[str, Any]):
+        """Display response from RAG System with clickable source citations"""
         response_text = rag_result.get('response', 'No response available')
         method = rag_result.get('method', 'unknown')
         confidence = rag_result.get('confidence', 0.0)
         query_time = rag_result.get('query_time', 0.0)
+        sources = rag_result.get('sources', [])
         
-        # Determine response styling based on method
-        if method == 'semantic_search':
-            response_icon = "🧠"
-            response_title = "Semantic Search Response"
-            response_class = "semantic"
-        elif method == 'vector_search':
-            response_icon = "📊"
-            response_title = "Vector Search Response"
-            response_class = "vector"
-        elif method == 'web_search':
-            response_icon = "🌐"
-            response_title = "Web Search Response"
-            response_class = "web"
-        elif method == 'basic_response':
-            response_icon = "💡"
-            response_title = "Basic Response"
-            response_class = "basic"
-        else:
-            response_icon = "🤖"
-            response_title = "AI Response"
-            response_class = "default"
+        # Process source citations to make them clickable
+        processed_response = self._process_source_citations(response_text, sources)
         
-        # Display response with enhanced styling
+        # Display response
         st.markdown(f"""
-        <div class="ai-response animate-fade-in {response_class}">
-            <div class="ai-response-header">
-                <span class="response-icon">{response_icon}</span>
-                <span class="response-title">{response_title}</span>
-                <div class="response-indicator"></div>
+        <div class="ai-response">
+            <div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+                🤖 AI Response
             </div>
-            <div class="ai-response-content">
-                {response_text.replace(chr(10), '<br>')}
+            <div style="line-height: 1.8; font-size: 1.125rem; margin-bottom: 2rem;">
+                {processed_response.replace(chr(10), '<br>')}
             </div>
-            <div class="response-footer">
-                <div class="response-metrics">
-                    <span class="metric">Method: {method.replace('_', ' ').title()}</span>
-                    <span class="metric">Confidence: {confidence:.1%}</span>
-                    <span class="metric">Response Time: {query_time:.2f}s</span>
+            <div style="border-top: 1px solid rgba(100, 255, 218, 0.2); padding-top: 1.5rem; font-size: 0.9rem; color: #a0aec0;">
+                <div style="display: flex; gap: 1.5rem; margin-bottom: 1rem;">
+                    <span>Method: {method.replace('_', ' ').title()}</span>
+                    <span>Confidence: {confidence:.1%}</span>
+                    <span>Response Time: {query_time:.2f}s</span>
                 </div>
-                <span class="powered-by">Powered by Enhanced RAG System V2</span>
+                {f'<div style="margin-bottom: 1rem; color: #64ffda;">📖 References: {len(sources)} sources used in this response</div>' if sources else ''}
+                <div style="text-align: center; font-style: italic;">
+                    Powered by IntelliSearch RAG System
+                </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
-    
-    async def generate_response(self, rag_result: Dict[str, Any]):
-        """Legacy method - kept for backward compatibility"""
-        # This method is now deprecated in favor of display_enhanced_response
-        # but kept for any remaining legacy calls
-        await self.display_enhanced_response(rag_result)
     
     async def run(self):
         """Main application interface"""
         self.render_header()
         
-        # Enhanced system initialization
+        # System initialization
         if not self.is_initialized and RAG_AVAILABLE:
-            init_placeholder = st.empty()
-            init_placeholder.markdown("""
-            <div class="system-initializing">
-                <div class="init-container">
-                    <div class="init-icon">⚡</div>
-                    <div class="init-text">Initializing IntelliSearch System</div>
-                    <div class="init-progress">
-                        <div class="progress-bar"></div>
-                    </div>
-                    <div class="init-details">Loading advanced RAG capabilities...</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            success = await self.initialize_rag_system()
-            init_placeholder.empty()
-            
-            if not success:
-                st.warning("⚠️ Running in Basic Mode - Advanced RAG features unavailable")
-                self.is_initialized = False  # Set degraded mode flag
+            with st.spinner("Initializing IntelliSearch System..."):
+                success = await self.initialize_rag_system()
                 
-            # Success animation
-            st.markdown("""
-            <div class="system-ready animate-success">
-                <div class="ready-icon">✨</div>
-                <div class="ready-text">IntelliSearch System Ready</div>
-                <div class="ready-subtext">Advanced RAG capabilities activated</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Small delay for visual effect
-            import time
-            time.sleep(1)
-            st.rerun()
+                if not success:
+                    st.warning("⚠️ Running in Basic Mode - Advanced RAG features unavailable")
+                    self.is_initialized = False
+                else:
+                    st.success("✨ IntelliSearch System Ready - Advanced RAG capabilities activated")
+                    time.sleep(1)
+                    st.rerun()
         
-        # Enhanced system status with space database statistics
+        # System status - simplified without mode announcements
         if self.system_status:
-            # Display comprehensive system status for initialized system
-            capabilities = self.system_status['capabilities']
+            capabilities = self.system_status.get('capabilities', {})
             active_caps = [k.replace('_', ' ').title() for k, v in capabilities.items() if v]
             
-            # Get database statistics if available
-            total_articles = "1100+"  # Our expanded database
+            total_articles = "1100+"
             
-            if self.system_status['system_mode'] == 'full_semantic':
-                st.success(f"🚀 **Full Semantic Mode Active** - {total_articles} space articles indexed | Features: {', '.join(active_caps)}")
-            elif self.system_status['system_mode'] == 'vector_only':
-                st.info(f"📊 **Vector Search Mode** - {total_articles} space articles available | Features: {', '.join(active_caps)}")
+            # Enhanced status messaging with performance info
+            if len(active_caps) >= 3:
+                avg_time = self.performance_metrics.get('avg_response_time', 0)
+                success_rate = self.performance_metrics.get('success_rate', 100)
+                # Status message removed to clean up UI
+            elif len(active_caps) >= 2:
+                st.info(f"📊 **Search System Active** - {total_articles} space articles available | {len(active_caps)} features operational")
             else:
-                st.warning(f"🔍 **{self.system_status['system_mode'].replace('_', ' ').title()}** - {total_articles} articles | Available: {', '.join(active_caps)}")
-            
-            # Add database categories info
-            with st.expander("📚 Space Knowledge Database Categories", expanded=False):
-                st.markdown("""
-                **🚀 NASA Missions**: Artemis, Apollo, Mars exploration, deep space missions  
-                **🌍 Planets & Astronomy**: Solar system, exoplanets, galaxies, stars  
-                **👨‍🚀 Astronauts**: Biographies of space explorers and their achievements  
-                **🏢 Space Agencies**: NASA, ESA, SpaceX, ISRO, and international programs  
-                **📡 Space Technology**: Rockets, satellites, space stations, instruments  
-                **📰 Space News**: Latest developments and discoveries  
-                **🛰️ Space Stations**: ISS, Tiangong, historical stations  
-                **🌌 Deep Space**: Voyager missions, telescopes, interstellar exploration  
-                **🔬 Space Science**: Planetary research, astrobiology, space physics  
-                **📅 Space History**: Timeline of major milestones and achievements
-                """)
+                st.warning(f"🔍 **Limited Capability Mode** - {total_articles} articles accessible | {len(active_caps)} feature(s) available")
                 
         elif not self.is_initialized:
             if not RAG_AVAILABLE:
-                # Only show this briefly, then hide it to not clutter the interface
-                if 'status_shown' not in st.session_state:
-                    st.session_state['status_shown'] = True
-                    st.info("🌟 **Basic Mode Active** - Core search functionality available")
+                st.info("🌟 **Basic Mode Active** - Core search functionality available. Advanced RAG features are temporarily unavailable due to missing dependencies.")
             else:
-                # Similarly, only show briefly
-                if 'status_shown' not in st.session_state:
-                    st.session_state['status_shown'] = True
-                    st.warning("⚠️ **Basic Mode Active** - Some advanced features may be limited")
+                st.warning("⚠️ **Initializing System** - Some advanced features may be limited during startup. Full capabilities will be available shortly.")
         
-        # Enhanced main query interface with proper structure
+        # Main query interface
         st.markdown("""
-        <div class="query-container animate-slide-up">
-            <div class="query-wrapper">
-        """, unsafe_allow_html=True)
-        
-        # Main search title
-        st.markdown("""
-        <div style="text-align: center; margin-bottom: 2rem; z-index: 300; position: relative;">
-            <h2 style="color: #64ffda; font-size: 1.5rem; font-weight: 600; margin: 0;">
-                🔍 Enter Your Query
-            </h2>
-            <p style="color: #cbd5e0; font-size: 1rem; margin: 0.5rem 0 0 0; opacity: 0.8;">
-                Ask anything about space, technology, careers, or general knowledge
-            </p>
+        <div class="query-container">
+            <div style="text-align: center; margin: 2rem 0; position: relative; z-index: 100;">
+                <h2 style="color: #64ffda; font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;">
+                    🔍 Enter Your Query
+                </h2>
+                <p style="color: #cbd5e0; font-size: 1rem; opacity: 0.8;">
+                    Ask anything about space, technology, careers, or general knowledge
+                </p>
+            </div>
         </div>
         """, unsafe_allow_html=True)
         
-        # Query input with enhanced styling
+        # Query input
         user_question = st.text_input(
             "Search Query",
             placeholder="🚀 What would you like to explore today?",
@@ -1713,10 +928,7 @@ class IntelliSearch:
             key="main_search_input"
         )
         
-        # Add some spacing
-        st.markdown("<div style='margin: 1.5rem 0;'></div>", unsafe_allow_html=True)
-        
-        # Enhanced button layout with perfect centering
+        # Search button
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             query_button = st.button(
@@ -1726,31 +938,39 @@ class IntelliSearch:
                 use_container_width=True
             )
         
-        # Close the query container properly
+        # Help section with better button design
         st.markdown("""
-            </div>
+        <div style="text-align: center; margin: 3rem 0 2rem 0;">
+            <details style="background: rgba(15, 15, 35, 0.8); border: 2px solid rgba(100, 255, 218, 0.3); border-radius: 20px; padding: 0; margin: 0 auto; max-width: 700px; backdrop-filter: blur(20px);">
+                <summary style="background: linear-gradient(135deg, rgba(100, 255, 218, 0.9) 0%, rgba(0, 255, 136, 0.8) 100%); color: #0f172a; padding: 1.5rem 2rem; border-radius: 18px; cursor: pointer; font-weight: 600; font-size: 1.2rem; text-align: center; transition: all 0.3s ease; user-select: none; list-style: none; display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
+                    📚 How to Use IntelliSearch 
+                    <span style="font-size: 0.9rem; opacity: 0.8;">(Click to expand)</span>
+                </summary>
+                <div style="padding: 2.5rem; color: #f1f5f9; line-height: 1.7;">
+                    <h3 style="color: #00ff88; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">🚀 Getting Started</h3>
+                    <ul style="margin-bottom: 2rem; padding-left: 1.5rem;">
+                        <li style="margin-bottom: 0.75rem;"><strong style="color: #64ffda;">Ask Questions</strong>: Enter your query in the search box above</li>
+                        <li style="margin-bottom: 0.75rem;"><strong style="color: #64ffda;">Be Specific</strong>: More detailed questions get better answers</li>
+                        <li style="margin-bottom: 0.75rem;"><strong style="color: #64ffda;">Explore Topics</strong>: Try space, technology, recruitment, or scientific concepts</li>
+                    </ul>
+                    
+                    <h3 style="color: #00ff88; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">⚡ System Capabilities</h3>
+                    <ul style="margin-bottom: 2rem; padding-left: 1.5rem;">
+                        <li style="margin-bottom: 0.75rem;"><strong style="color: #64ffda;">Multi-Source Search</strong>: Searches both local knowledge bases and web sources</li>
+                        <li style="margin-bottom: 0.75rem;"><strong style="color: #64ffda;">Space Intelligence</strong>: Specialized in space exploration and astronomy</li>
+                        <li style="margin-bottom: 0.75rem;"><strong style="color: #64ffda;">Technical Analysis</strong>: Handles complex scientific and technical queries</li>
+                    </ul>
+                    
+                    <h3 style="color: #00ff88; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">💡 Tips for Best Results</h3>
+                    <ul style="padding-left: 1.5rem;">
+                        <li style="margin-bottom: 0.75rem;">Use natural language - ask as you would ask a human expert</li>
+                        <li style="margin-bottom: 0.75rem;">Include context when relevant (e.g., "for beginners" or "technical details")</li>
+                        <li style="margin-bottom: 0.75rem;">Ask follow-up questions to dive deeper into topics</li>
+                    </ul>
+                </div>
+            </details>
         </div>
         """, unsafe_allow_html=True)
-        
-        # How to use section
-        with st.expander("📚 How to Use This System"):
-            st.markdown("""
-                    ### Getting Started
-                    1. **Ask Questions**: Enter your query in the search box above
-                    2. **Be Specific**: More detailed questions get better answers
-                    3. **Explore Topics**: Try space, technology, recruitment, or scientific concepts
-                    
-                    ### System Capabilities
-                    - **Multi-Source Search**: Searches both local knowledge bases and web sources
-                    - **Space Intelligence**: Specialized in space exploration and astronomy
-                    - **Technical Analysis**: Handles complex scientific and technical queries
-                    - **Recruitment Insights**: Provides career and skill-related information
-                    
-                    ### Tips for Best Results
-                    - Use natural language - ask as you would ask a human expert
-                    - Include context when relevant (e.g., "for beginners" or "technical details")
-                    - Ask follow-up questions to dive deeper into topics
-                    """)
         
         # Process query
         if query_button and user_question:
