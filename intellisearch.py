@@ -46,17 +46,17 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;600;700&display=swap');
     
-    /* Professional Deep Space Background with Image */
+    /* Dynamic Space Background System with Multiple Images */
     .stApp {
         background: 
-            /* Image overlay gradients for readability */
-            radial-gradient(ellipse at top, rgba(15, 15, 30, 0.85) 0%, rgba(0, 0, 0, 0.9) 50%, rgba(0, 0, 0, 0.95) 100%),
-            linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(5, 5, 16, 0.85) 25%, rgba(10, 10, 21, 0.9) 50%, rgba(5, 5, 16, 0.85) 75%, rgba(0, 0, 0, 0.8) 100%),
-            /* Space background image */
-            url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'),
-            /* Fallback gradients if image fails to load */
-            radial-gradient(ellipse at top, rgba(15, 15, 30, 0.8) 0%, rgba(0, 0, 0, 0.9) 50%, #000000 100%),
-            linear-gradient(180deg, #000000 0%, #050510 25%, #0a0a15 50%, #050510 75%, #000000 100%);
+            /* Enhanced overlay gradients for text readability */
+            radial-gradient(ellipse at top, rgba(15, 15, 30, 0.87) 0%, rgba(0, 0, 0, 0.91) 50%, rgba(0, 0, 0, 0.96) 100%),
+            linear-gradient(180deg, rgba(0, 0, 0, 0.82) 0%, rgba(5, 5, 16, 0.87) 25%, rgba(10, 10, 21, 0.92) 50%, rgba(5, 5, 16, 0.87) 75%, rgba(0, 0, 0, 0.82) 100%),
+            /* Primary space background - Deep Space with Nebula */
+            var(--bg-image, url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')),
+            /* Fallback gradients for loading/failure states */
+            radial-gradient(ellipse at top, rgba(15, 15, 30, 0.85) 0%, rgba(0, 0, 0, 0.92) 50%, #000000 100%),
+            linear-gradient(180deg, #000000 0%, #050510 20%, #0a0a15 40%, #050510 60%, #0f0f20 80%, #000000 100%);
         background-size: cover, cover, cover, cover, cover;
         background-position: center, center, center, center, center;
         background-repeat: no-repeat;
@@ -67,6 +67,36 @@ st.markdown("""
         position: relative;
         overflow-x: hidden;
         padding-bottom: 2rem;
+        transition: background-image 2s ease-in-out;
+    }
+    
+    /* Alternative Background Images for Dynamic Switching */
+    .bg-nebula {
+        --bg-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+    }
+    
+    .bg-galaxy {
+        --bg-image: url('https://images.unsplash.com/photo-1502134677-57e1e8d61e8e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+    }
+    
+    .bg-spiral-galaxy {
+        --bg-image: url('https://images.unsplash.com/photo-1543722530-d2c3201371e7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+    }
+    
+    .bg-deep-space {
+        --bg-image: url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+    }
+    
+    .bg-mars {
+        --bg-image: url('https://images.unsplash.com/photo-1614728263952-84ea256f9679?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+    }
+    
+    .bg-moon {
+        --bg-image: url('https://images.unsplash.com/photo-1505506874110-6a7a69069a08?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+    }
+    
+    .bg-telescope {
+        --bg-image: url('https://images.unsplash.com/photo-1507683309289-c7e1eeaab719?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
     }
     
     /* Optimized Space Elements */
@@ -413,6 +443,96 @@ st.markdown("""
     footer { visibility: hidden; }
     header { visibility: hidden; }
 </style>
+
+<script>
+// Dynamic Background Controller
+class SpaceBackgroundController {
+    constructor() {
+        this.backgrounds = {
+            default: 'bg-nebula',
+            black_hole: 'bg-deep-space',
+            galaxy: 'bg-galaxy',
+            spiral: 'bg-spiral-galaxy', 
+            mars: 'bg-mars',
+            moon: 'bg-moon',
+            telescope: 'bg-telescope',
+            jwst: 'bg-telescope',
+            space_station: 'bg-deep-space',
+            nebula: 'bg-nebula'
+        };
+        this.currentBackground = 'bg-nebula';
+        this.rotationTimer = null;
+        this.startBackgroundRotation();
+    }
+    
+    setBackground(className) {
+        const appElement = document.querySelector('.stApp');
+        if (appElement && className !== this.currentBackground) {
+            // Remove all background classes
+            Object.values(this.backgrounds).forEach(bg => {
+                appElement.classList.remove(bg);
+            });
+            // Add new background class
+            appElement.classList.add(className);
+            this.currentBackground = className;
+        }
+    }
+    
+    setBackgroundByQuery(query) {
+        const queryLower = query.toLowerCase();
+        let selectedBackground = this.backgrounds.default;
+        
+        // Query-responsive background selection
+        if (queryLower.includes('black hole')) {
+            selectedBackground = this.backgrounds.black_hole;
+        } else if (queryLower.includes('galaxy') || queryLower.includes('milky way')) {
+            selectedBackground = Math.random() > 0.5 ? this.backgrounds.galaxy : this.backgrounds.spiral;
+        } else if (queryLower.includes('mars') || queryLower.includes('red planet')) {
+            selectedBackground = this.backgrounds.mars;
+        } else if (queryLower.includes('moon') || queryLower.includes('lunar')) {
+            selectedBackground = this.backgrounds.moon;
+        } else if (queryLower.includes('telescope') || queryLower.includes('jwst') || queryLower.includes('hubble')) {
+            selectedBackground = this.backgrounds.telescope;
+        } else if (queryLower.includes('nebula') || queryLower.includes('star formation')) {
+            selectedBackground = this.backgrounds.nebula;
+        } else if (queryLower.includes('space station') || queryLower.includes('iss')) {
+            selectedBackground = this.backgrounds.space_station;
+        }
+        
+        this.setBackground(selectedBackground);
+        this.restartRotationTimer();
+    }
+    
+    startBackgroundRotation() {
+        // Rotate backgrounds every 30 seconds when idle
+        this.rotationTimer = setInterval(() => {
+            const backgrounds = Object.values(this.backgrounds);
+            const randomBg = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+            this.setBackground(randomBg);
+        }, 30000);
+    }
+    
+    restartRotationTimer() {
+        if (this.rotationTimer) {
+            clearInterval(this.rotationTimer);
+        }
+        // Wait 2 minutes before resuming rotation after query-based change
+        setTimeout(() => {
+            this.startBackgroundRotation();
+        }, 120000);
+    }
+}
+
+// Initialize background controller
+window.spaceBackgroundController = new SpaceBackgroundController();
+
+// Expose function for Python to call
+window.changeBackground = function(query) {
+    if (window.spaceBackgroundController) {
+        window.spaceBackgroundController.setBackgroundByQuery(query);
+    }
+};
+</script>
 """, unsafe_allow_html=True)
 
 class IntelliSearch:
@@ -725,6 +845,15 @@ class IntelliSearch:
         try:
             # Track query metrics
             start_time = time.time()
+            
+            # Change background based on query content
+            st.components.v1.html(f"""
+                <script>
+                if (window.changeBackground) {{
+                    window.changeBackground("{user_question}");
+                }}
+                </script>
+            """, height=0)
             
             # Execute RAG pipeline
             rag_result = await self.rag_system.query(user_question)
