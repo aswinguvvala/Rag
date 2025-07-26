@@ -41,13 +41,7 @@ except Exception as e:
 # Load environment variables
 load_dotenv()
 
-# Configure Streamlit
-st.set_page_config(
-    page_title="IntelliSearch",
-    page_icon="🔍",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+# Streamlit configuration handled by main entry point (app.py)
 
 # Enhanced professional CSS with clean animated background
 st.markdown("""
@@ -828,7 +822,24 @@ class IntelliSearch:
             if st.button("🔍 Test RAG System", help="Test if RAG system can process a simple query"):
                 if self.rag_system and self.is_initialized:
                     try:
-                        test_result = asyncio.run(self.rag_system.query("test query"))
+                        # Use nest_asyncio to handle nested event loops
+                        import nest_asyncio
+                        nest_asyncio.apply()
+                        
+                        # Get the current event loop
+                        try:
+                            loop = asyncio.get_event_loop()
+                            if loop.is_running():
+                                # Use run_until_complete in a nested context
+                                test_result = loop.run_until_complete(self.rag_system.query("test query"))
+                            else:
+                                test_result = asyncio.run(self.rag_system.query("test query"))
+                        except RuntimeError:
+                            # Fallback for event loop issues
+                            loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(loop)
+                            test_result = loop.run_until_complete(self.rag_system.query("test query"))
+                        
                         if test_result and test_result.get('response'):
                             st.success("✅ RAG system is responding to queries")
                             st.json({"method": test_result.get('method'), "confidence": test_result.get('confidence')})
@@ -836,6 +847,9 @@ class IntelliSearch:
                             st.error("❌ RAG system test failed - no response generated")
                     except Exception as e:
                         st.error(f"❌ RAG system test failed: {str(e)}")
+                        # Show basic functionality test instead
+                        if hasattr(self.rag_system, 'embedded_documents'):
+                            st.info(f"✅ Basic functionality verified: {len(self.rag_system.embedded_documents)} documents loaded")
                 else:
                     st.error("❌ RAG system not initialized - cannot run test")
     
@@ -1244,17 +1258,155 @@ class IntelliSearch:
         if query_button and user_question:
             await self.process_query(user_question)
 
-async def main():
-    """Application entry point"""
-    if not st.session_state.get("intellisearch"):
-        st.session_state["intellisearch"] = IntelliSearch()
-    
-    app = st.session_state["intellisearch"]
-    await app.run()
+# Streamlit-compatible async execution wrapper
+@st.cache_resource
+def get_intellisearch_app():
+    """Get or create the IntelliSearch app instance"""
+    return IntelliSearch()
 
-if __name__ == "__main__":
+async def run_async_query(app, query):
+    """Wrapper for async query processing"""
+    return await app.process_query(query)
+
+def main():
+    """Main application entry point for Streamlit"""
+    # Get the app instance
+    app = get_intellisearch_app()
+    
+    # Run the app using Streamlit's async handling
     try:
-        asyncio.run(main())
+        # Use asyncio to run the app initialization if needed
+        loop = None
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            # No event loop running, create one
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
+        # Initialize the app if needed
+        if not app.is_initialized and RAG_AVAILABLE:
+            # Run initialization in the event loop
+            if loop.is_running():
+                # We're in an existing event loop (Streamlit context)
+                # Schedule the initialization but don't block
+                import nest_asyncio
+                nest_asyncio.apply()
+                loop.run_until_complete(app.initialize_rag_system())
+            else:
+                # No running loop, safe to use run_until_complete
+                loop.run_until_complete(app.initialize_rag_system())
+        
+        # Render the main interface
+        app.render_header()
+        
+        # System status
+        if app.system_status:
+            capabilities = app.system_status.get('capabilities', {})
+            active_caps = [k.replace('_', ' ').title() for k, v in capabilities.items() if v]
+            total_articles = "1100+"
+            
+            if len(active_caps) >= 3:
+                avg_time = app.performance_metrics.get('avg_response_time', 0)
+                success_rate = app.performance_metrics.get('success_rate', 100)
+            elif len(active_caps) >= 2:
+                st.info(f"📊 **Search System Active** - {total_articles} space articles available | {len(active_caps)} features operational")
+            else:
+                st.warning(f"🔍 **Limited Capability Mode** - {total_articles} articles accessible | {len(active_caps)} feature(s) available")
+        elif not app.is_initialized:
+            if not RAG_AVAILABLE:
+                st.info("🌟 **Basic Mode Active** - Core search functionality available. Advanced RAG features are temporarily unavailable due to missing dependencies.")
+            else:
+                st.warning("⚠️ **Initializing System** - Some advanced features may be limited during startup. Full capabilities will be available shortly.")
+        
+        # Main query interface
+        st.markdown("""
+        <div class="query-container">
+            <div style="text-align: center; margin: 2rem 0; position: relative; z-index: 100;">
+                <h2 style="color: #64ffda; font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;">
+                    🔍 Enter Your Query
+                </h2>
+                <p style="color: #cbd5e0; font-size: 1rem; opacity: 0.8;">
+                    Ask anything about space, technology, careers, or general knowledge
+                </p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Query input
+        user_question = st.text_input(
+            "Search Query",
+            placeholder="🚀 What would you like to explore today?",
+            help="Submit queries for intelligent information retrieval using advanced RAG techniques",
+            label_visibility="collapsed",
+            key="main_search_input"
+        )
+        
+        # Search button
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            query_button = st.button(
+                "🚀 SEARCH", 
+                type="primary",
+                help="Execute advanced semantic search",
+                use_container_width=True
+            )
+        
+        # Help section
+        st.markdown("""
+        <div style="text-align: center; margin: 3rem 0 2rem 0;">
+            <details style="background: rgba(15, 15, 35, 0.8); border: 2px solid rgba(100, 255, 218, 0.3); border-radius: 20px; padding: 0; margin: 0 auto; max-width: 700px; backdrop-filter: blur(20px);">
+                <summary style="background: linear-gradient(135deg, rgba(100, 255, 218, 0.9) 0%, rgba(0, 255, 136, 0.8) 100%); color: #0f172a; padding: 1.5rem 2rem; border-radius: 18px; cursor: pointer; font-weight: 600; font-size: 1.2rem; text-align: center; transition: all 0.3s ease; user-select: none; list-style: none; display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
+                    📚 How to Use IntelliSearch 
+                    <span style="font-size: 0.9rem; opacity: 0.8;">(Click to expand)</span>
+                </summary>
+                <div style="padding: 2.5rem; color: #f1f5f9; line-height: 1.7;">
+                    <h3 style="color: #00ff88; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">🚀 Getting Started</h3>
+                    <ul style="margin-bottom: 2rem; padding-left: 1.5rem;">
+                        <li style="margin-bottom: 0.75rem;"><strong style="color: #64ffda;">Ask Questions</strong>: Enter your query in the search box above</li>
+                        <li style="margin-bottom: 0.75rem;"><strong style="color: #64ffda;">Be Specific</strong>: More detailed questions get better answers</li>
+                        <li style="margin-bottom: 0.75rem;"><strong style="color: #64ffda;">Explore Topics</strong>: Try space, technology, recruitment, or scientific concepts</li>
+                    </ul>
+                    
+                    <h3 style="color: #00ff88; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">⚡ System Capabilities</h3>
+                    <ul style="margin-bottom: 2rem; padding-left: 1.5rem;">
+                        <li style="margin-bottom: 0.75rem;"><strong style="color: #64ffda;">Multi-Source Search</strong>: Searches both local knowledge bases and web sources</li>
+                        <li style="margin-bottom: 0.75rem;"><strong style="color: #64ffda;">Space Intelligence</strong>: Specialized in space exploration and astronomy</li>
+                        <li style="margin-bottom: 0.75rem;"><strong style="color: #64ffda;">Technical Analysis</strong>: Handles complex scientific and technical queries</li>
+                    </ul>
+                    
+                    <h3 style="color: #00ff88; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">💡 Tips for Best Results</h3>
+                    <ul style="padding-left: 1.5rem;">
+                        <li style="margin-bottom: 0.75rem;">Use natural language - ask as you would ask a human expert</li>
+                        <li style="margin-bottom: 0.75rem;">Include context when relevant (e.g., "for beginners" or "technical details")</li>
+                        <li style="margin-bottom: 0.75rem;">Ask follow-up questions to dive deeper into topics</li>
+                    </ul>
+                </div>
+            </details>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Process query
+        if query_button and user_question:
+            if app.is_initialized:
+                # Use asyncio to handle the query processing
+                try:
+                    import nest_asyncio
+                    nest_asyncio.apply()
+                    loop = asyncio.get_event_loop()
+                    loop.run_until_complete(app.process_query(user_question))
+                except Exception as e:
+                    st.error(f"Query processing error: {e}")
+                    # Fallback to basic mode
+                    loop.run_until_complete(app.handle_basic_query(user_question))
+            else:
+                # Basic mode fallback
+                loop.run_until_complete(app.handle_basic_query(user_question))
+        
     except Exception as e:
         st.error(f"Application error: {e}")
-        st.info("Please check system requirements.")
+        st.info("Please check system requirements and try refreshing the page.")
+
+# Run the app only when this module is executed directly
+if __name__ == "__main__":
+    main()

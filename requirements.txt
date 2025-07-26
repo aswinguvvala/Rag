@@ -16,3 +16,4 @@ openai>=1.58.0
 python-dotenv>=1.0.0
 beautifulsoup4>=4.12.0
 psutil>=5.9.0
+nest-asyncio>=1.5.0
