@@ -44,11 +44,17 @@ class HybridRAGSystem:
         self.documents = []
         self.metadata = []
         
-        # Configuration
+        # Configuration with cloud optimization
         self.similarity_threshold = 0.4
         self.max_local_results = 5
         self.max_web_results = 5
         self.enable_web_fallback = True
+        self.memory_mode = 'standard'  # 'standard', 'lightweight', 'minimal'
+        
+        # Memory management
+        self.max_memory_mb = 512  # Streamlit Cloud limit approximation
+        self.embedding_cache = {}  # Cache for repeated queries
+        self.cache_size_limit = 50  # Maximum cached embeddings
         
         # System status with detailed tracking
         self.is_initialized = False
@@ -60,6 +66,10 @@ class HybridRAGSystem:
             'confidence_evaluation': False,
             'document_retrieval': False
         }
+        
+        # Performance tracking
+        self.query_count = 0
+        self.cache_hits = 0
         
         # Initialize embedded knowledge base
         self._load_embedded_documents()
@@ -149,29 +159,80 @@ class HybridRAGSystem:
         self.initialization_errors = []
         
         try:
-            # Initialize embedding model with fallback
+            # Initialize embedding model with multiple fallback strategies
             if SENTENCE_TRANSFORMERS_AVAILABLE:
-                try:
-                    st.info("🧠 Loading semantic search model...")
-                    self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-                    self.capabilities['semantic_search'] = True
-                    st.success("✅ Semantic search model loaded successfully")
-                except Exception as e:
-                    self.initialization_errors.append(f"Embedding model: {str(e)}")
-                    st.warning(f"⚠️ Semantic search unavailable: {str(e)}")
+                # Try different models in order of preference (lighter first for cloud)
+                models_to_try = [
+                    'paraphrase-MiniLM-L3-v2',  # Very lightweight
+                    'all-MiniLM-L6-v2',        # Standard model
+                    'all-MiniLM-L12-v2'        # Larger fallback
+                ]
+                
+                for model_name in models_to_try:
+                    try:
+                        st.info(f"🧠 Attempting to load {model_name}...")
+                        # Memory-conscious model loading
+                        import gc
+                        gc.collect()  # Clear memory before loading
+                        
+                        # Load with reduced memory footprint
+                        self.embedding_model = SentenceTransformer(
+                            model_name,
+                            device='cpu',  # Force CPU for cloud compatibility
+                            cache_folder=None  # Disable caching to save space
+                        )
+                        
+                        # Test the model with a simple encoding
+                        test_embedding = self.embedding_model.encode(["test"])
+                        if test_embedding is not None and len(test_embedding) > 0:
+                            self.capabilities['semantic_search'] = True
+                            st.success(f"✅ Semantic search model loaded: {model_name}")
+                            break
+                        else:
+                            raise Exception("Model loaded but failed test encoding")
+                            
+                    except Exception as e:
+                        st.warning(f"⚠️ Failed to load {model_name}: {str(e)}")
+                        self.initialization_errors.append(f"Model {model_name}: {str(e)}")
+                        # Clean up failed model attempt
+                        self.embedding_model = None
+                        import gc
+                        gc.collect()
+                        continue
+                
+                if not self.embedding_model:
+                    st.error("❌ All embedding models failed to load")
+                    self.initialization_errors.append("All embedding models failed")
             else:
                 self.initialization_errors.append("sentence-transformers package not available")
                 st.warning("⚠️ Semantic search unavailable: missing sentence-transformers")
             
-            # Initialize FAISS index with fallback
+            # Initialize FAISS index with memory optimization
             if FAISS_AVAILABLE and self.embedding_model:
                 try:
                     st.info("🔍 Building search index...")
+                    # Check available memory before creating index
+                    import psutil
+                    memory_info = psutil.virtual_memory()
+                    available_mb = memory_info.available / (1024 * 1024)
+                    
+                    if available_mb < 100:  # Less than 100MB available
+                        st.warning(f"⚠️ Low memory ({available_mb:.0f}MB), using lightweight indexing")
+                        await self._create_lightweight_index()
+                    else:
+                        await self._create_in_memory_index()
+                    
+                    st.success("✅ Search index created successfully")
+                except ImportError:
+                    # psutil not available, proceed with standard indexing
+                    st.info("📊 Memory monitoring unavailable, using standard indexing")
                     await self._create_in_memory_index()
                     st.success("✅ Search index created successfully")
                 except Exception as e:
                     self.initialization_errors.append(f"FAISS index: {str(e)}")
                     st.warning(f"⚠️ Advanced search unavailable: {str(e)}")
+                    # Fallback to simple keyword search
+                    st.info("🔄 Falling back to keyword-based search")
             else:
                 self.initialization_errors.append("FAISS not available or embedding model failed")
                 st.warning("⚠️ Advanced search unavailable: missing dependencies")
@@ -185,11 +246,21 @@ class HybridRAGSystem:
                 self.initialization_errors.append(f"Web search: {str(e)}")
                 st.warning(f"⚠️ Web search may be limited: {str(e)}")
             
+            # Determine memory mode based on what was successfully initialized
+            if self.embedding_model and self.faiss_index:
+                if len(self.documents) >= len(self.embedded_documents):
+                    self.memory_mode = 'standard'
+                else:
+                    self.memory_mode = 'lightweight'
+            else:
+                self.memory_mode = 'minimal'
+            
             # Mark as initialized if at least basic functionality works
             if self.capabilities['document_retrieval']:
                 self.is_initialized = True
                 capabilities_count = sum(1 for v in self.capabilities.values() if v)
                 st.success(f"🚀 IntelliSearch initialized with {capabilities_count}/5 capabilities active")
+                st.info(f"📊 Memory mode: {self.memory_mode.upper()}")
                 return True
             else:
                 st.error("❌ Failed to initialize core document retrieval")
@@ -205,23 +276,95 @@ class HybridRAGSystem:
         if not self.embedding_model:
             raise Exception("Embedding model not available")
         
-        # Create embeddings for all documents
-        documents_text = [doc["content"] for doc in self.embedded_documents]
-        embeddings = self.embedding_model.encode(documents_text)
+        try:
+            # Create embeddings for all documents in batches to save memory
+            documents_text = [doc["content"] for doc in self.embedded_documents]
+            
+            # Process in smaller batches for memory efficiency
+            batch_size = 3  # Small batch size for cloud deployment
+            all_embeddings = []
+            
+            for i in range(0, len(documents_text), batch_size):
+                batch = documents_text[i:i+batch_size]
+                batch_embeddings = self.embedding_model.encode(batch, show_progress_bar=False)
+                all_embeddings.append(batch_embeddings)
+                
+                # Force garbage collection between batches
+                import gc
+                gc.collect()
+            
+            # Combine all embeddings
+            embeddings = np.vstack(all_embeddings)
+            
+            # Create FAISS index with memory optimization
+            dimension = embeddings.shape[1]
+            self.faiss_index = faiss.IndexFlatIP(dimension)  # Inner product for similarity
+            
+            # Normalize embeddings for cosine similarity
+            faiss.normalize_L2(embeddings)
+            self.faiss_index.add(embeddings.astype('float32'))
+            
+            # Store metadata for retrieval
+            self.documents = documents_text
+            self.metadata = [doc["metadata"] for doc in self.embedded_documents]
+            
+            # Clear intermediate variables to free memory
+            del all_embeddings, embeddings
+            import gc
+            gc.collect()
+            
+            return True
+            
+        except Exception as e:
+            st.error(f"Failed to create FAISS index: {str(e)}")
+            raise e
+    
+    async def _create_lightweight_index(self):
+        """Create lightweight index for memory-constrained environments"""
+        if not self.embedding_model:
+            raise Exception("Embedding model not available")
         
-        # Create FAISS index
-        dimension = embeddings.shape[1]
-        self.faiss_index = faiss.IndexFlatIP(dimension)  # Inner product for similarity
-        
-        # Normalize embeddings for cosine similarity
-        faiss.normalize_L2(embeddings)
-        self.faiss_index.add(embeddings.astype('float32'))
-        
-        # Store metadata for retrieval
-        self.documents = documents_text
-        self.metadata = [doc["metadata"] for doc in self.embedded_documents]
-        
-        return True
+        try:
+            # Use only first 4 documents to reduce memory usage
+            limited_docs = self.embedded_documents[:4]
+            documents_text = [doc["content"] for doc in limited_docs]
+            
+            # Create embeddings one at a time
+            embeddings_list = []
+            for doc_text in documents_text:
+                embedding = self.embedding_model.encode([doc_text], show_progress_bar=False)
+                embeddings_list.append(embedding[0])
+                
+                # Immediate garbage collection
+                import gc
+                gc.collect()
+            
+            embeddings = np.array(embeddings_list)
+            
+            # Create minimal FAISS index
+            dimension = embeddings.shape[1]
+            self.faiss_index = faiss.IndexFlatIP(dimension)
+            
+            # Normalize and add embeddings
+            faiss.normalize_L2(embeddings)
+            self.faiss_index.add(embeddings.astype('float32'))
+            
+            # Store limited metadata
+            self.documents = documents_text
+            self.metadata = [doc["metadata"] for doc in limited_docs]
+            
+            st.info(f"🔧 Lightweight index created with {len(limited_docs)} documents")
+            
+            # Clear memory
+            del embeddings_list, embeddings
+            import gc
+            gc.collect()
+            
+            return True
+            
+        except Exception as e:
+            st.error(f"Failed to create lightweight index: {str(e)}")
+            raise e
     
     async def query(self, query_text: str) -> Dict[str, Any]:
         """Process a query and return results"""
@@ -286,19 +429,41 @@ class HybridRAGSystem:
             }
     
     async def _semantic_search(self, query_text: str) -> List[SearchResult]:
-        """Perform semantic search using FAISS"""
+        """Perform semantic search using FAISS with caching"""
         try:
-            # Create query embedding
-            query_embedding = self.embedding_model.encode([query_text])
+            self.query_count += 1
+            
+            # Check cache first
+            cache_key = hash(query_text.lower().strip())
+            if cache_key in self.embedding_cache:
+                query_embedding = self.embedding_cache[cache_key]
+                self.cache_hits += 1
+            else:
+                # Create query embedding
+                query_embedding = self.embedding_model.encode([query_text], show_progress_bar=False)
+                
+                # Cache management - remove oldest if cache is full
+                if len(self.embedding_cache) >= self.cache_size_limit:
+                    # Remove first item (oldest)
+                    oldest_key = next(iter(self.embedding_cache))
+                    del self.embedding_cache[oldest_key]
+                
+                # Cache the embedding
+                self.embedding_cache[cache_key] = query_embedding
+            
+            # Normalize for cosine similarity
             faiss.normalize_L2(query_embedding)
             
             # Search FAISS index
-            scores, indices = self.faiss_index.search(query_embedding.astype('float32'), self.max_local_results)
+            scores, indices = self.faiss_index.search(
+                query_embedding.astype('float32'), 
+                min(self.max_local_results, len(self.documents))  # Don't search for more than available
+            )
             
             # Format results
             results = []
             for score, idx in zip(scores[0], indices[0]):
-                if idx >= 0 and score >= self.similarity_threshold:
+                if idx >= 0 and idx < len(self.documents) and score >= self.similarity_threshold:
                     results.append(SearchResult(
                         content=self.documents[idx],
                         metadata=self.metadata[idx],
@@ -476,12 +641,35 @@ class HybridRAGSystem:
             self.max_web_results = kwargs['max_web_results']
     
     def get_system_status(self) -> Dict[str, Any]:
-        """Get system status information"""
+        """Get system status information with performance metrics"""
+        # Calculate memory usage if possible
+        memory_info = {}
+        try:
+            import psutil
+            process = psutil.Process()
+            memory_info = {
+                'memory_mb': process.memory_info().rss / (1024 * 1024),
+                'memory_percent': process.memory_percent()
+            }
+        except (ImportError, Exception):
+            memory_info = {'memory_mb': 'unavailable', 'memory_percent': 'unavailable'}
+        
+        # Calculate cache efficiency
+        cache_hit_rate = (self.cache_hits / self.query_count) if self.query_count > 0 else 0
+        
         return {
             'is_initialized': self.is_initialized,
             'capabilities': self.capabilities,
             'initialization_errors': self.initialization_errors,
             'document_count': len(self.embedded_documents),
             'has_faiss_index': self.faiss_index is not None,
-            'has_embedding_model': self.embedding_model is not None
+            'has_embedding_model': self.embedding_model is not None,
+            'memory_mode': self.memory_mode,
+            'performance': {
+                'query_count': self.query_count,
+                'cache_hits': self.cache_hits,
+                'cache_hit_rate': f"{cache_hit_rate:.2%}",
+                'cache_size': len(self.embedding_cache)
+            },
+            **memory_info
         }

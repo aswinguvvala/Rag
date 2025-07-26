@@ -24,11 +24,19 @@ try:
     RAG_SYSTEM = HybridRAGSystem()
     RAG_AVAILABLE = True
     RAG_ERROR = None
+    SYSTEM_STARTUP_LOG = ["✅ RAG system imported successfully"]
 except ImportError as e:
     # Handle graceful degradation
     RAG_SYSTEM = None
     RAG_AVAILABLE = False
     RAG_ERROR = str(e)
+    SYSTEM_STARTUP_LOG = [f"❌ RAG system import failed: {str(e)}"]
+except Exception as e:
+    # Catch any other initialization errors
+    RAG_SYSTEM = None
+    RAG_AVAILABLE = False
+    RAG_ERROR = f"Initialization error: {str(e)}"
+    SYSTEM_STARTUP_LOG = [f"❌ RAG system initialization failed: {str(e)}"]
 
 # Load environment variables
 load_dotenv()
@@ -675,6 +683,9 @@ class IntelliSearch:
         </div>
         """, unsafe_allow_html=True)
         
+        # Add system diagnostic display
+        self.render_system_diagnostics()
+        
         # Add token metrics display
         if self.token_metrics['session_tokens'] > 0:
             col1, col2, col3 = st.columns([1, 1, 1])
@@ -699,6 +710,134 @@ class IntelliSearch:
                     <span style="display: block; font-size: 0.9rem; font-weight: 500; color: #cbd5e0; text-transform: uppercase; letter-spacing: 1px;">Session Total</span>
                 </div>
                 """, unsafe_allow_html=True)
+    
+    def render_system_diagnostics(self):
+        """Display comprehensive system diagnostics"""
+        with st.expander("🔧 System Diagnostics & Status", expanded=False):
+            # Startup log
+            st.markdown("### 📋 System Startup Log")
+            for log_entry in SYSTEM_STARTUP_LOG:
+                st.markdown(f"- {log_entry}")
+            
+            if RAG_ERROR:
+                st.markdown(f"**Error Details**: `{RAG_ERROR}`")
+            
+            # RAG System Status
+            st.markdown("### 🧠 RAG System Status")
+            if self.rag_system and hasattr(self.rag_system, 'get_system_status'):
+                try:
+                    status = self.rag_system.get_system_status()
+                    
+                    # Capabilities matrix
+                    st.markdown("**Capabilities:**")
+                    capabilities = status.get('capabilities', {})
+                    cols = st.columns(3)
+                    cap_items = list(capabilities.items())
+                    
+                    for i, (cap, enabled) in enumerate(cap_items):
+                        col_idx = i % 3
+                        with cols[col_idx]:
+                            emoji = "✅" if enabled else "❌"
+                            st.markdown(f"{emoji} {cap.replace('_', ' ').title()}")
+                    
+                    # System metrics
+                    st.markdown("**System Metrics:**")
+                    col1, col2, col3, col4 = st.columns(4)
+                    with col1:
+                        st.metric("Documents", status.get('document_count', 0))
+                    with col2:
+                        st.metric("Initialized", "Yes" if status.get('is_initialized', False) else "No")
+                    with col3:
+                        st.metric("FAISS Index", "Available" if status.get('has_faiss_index', False) else "Missing")
+                    with col4:
+                        st.metric("Memory Mode", status.get('memory_mode', 'unknown').upper())
+                    
+                    # Performance metrics
+                    if 'performance' in status:
+                        st.markdown("**Performance Metrics:**")
+                        perf = status['performance']
+                        pcol1, pcol2, pcol3, pcol4 = st.columns(4)
+                        with pcol1:
+                            st.metric("Queries", perf.get('query_count', 0))
+                        with pcol2:
+                            st.metric("Cache Hits", perf.get('cache_hits', 0))
+                        with pcol3:
+                            st.metric("Hit Rate", perf.get('cache_hit_rate', '0%'))
+                        with pcol4:
+                            st.metric("Cache Size", perf.get('cache_size', 0))
+                    
+                    # Memory metrics
+                    if 'memory_mb' in status and status['memory_mb'] != 'unavailable':
+                        st.markdown("**Memory Usage:**")
+                        mcol1, mcol2 = st.columns(2)
+                        with mcol1:
+                            st.metric("Memory (MB)", f"{status['memory_mb']:.1f}")
+                        with mcol2:
+                            st.metric("Memory %", f"{status.get('memory_percent', 0):.1f}%")
+                    
+                    # Initialization errors
+                    if status.get('initialization_errors'):
+                        st.markdown("**⚠️ Initialization Errors:**")
+                        for error in status.get('initialization_errors', []):
+                            st.error(f"- {error}")
+                            
+                except Exception as e:
+                    st.error(f"Unable to get system status: {str(e)}")
+            else:
+                st.error("RAG system not available or not initialized")
+            
+            # Environment diagnostics
+            st.markdown("### 🌐 Environment Diagnostics")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("**Package Availability:**")
+                try:
+                    import sentence_transformers
+                    st.success("✅ sentence-transformers")
+                except ImportError:
+                    st.error("❌ sentence-transformers")
+                
+                try:
+                    import faiss
+                    st.success("✅ faiss-cpu")
+                except ImportError:
+                    st.error("❌ faiss-cpu")
+                
+                try:
+                    import numpy
+                    st.success(f"✅ numpy ({numpy.__version__})")
+                except ImportError:
+                    st.error("❌ numpy")
+            
+            with col2:
+                st.markdown("**System Info:**")
+                st.info(f"Python: {sys.version.split()[0]}")
+                st.info(f"Streamlit: {st.__version__}")
+                
+                # Memory usage estimate
+                try:
+                    import psutil
+                    memory = psutil.virtual_memory()
+                    st.info(f"Memory: {memory.percent}% used")
+                except:
+                    st.info("Memory: Unable to check")
+            
+            # Quick test functionality
+            st.markdown("### 🧪 Quick System Test")
+            if st.button("🔍 Test RAG System", help="Test if RAG system can process a simple query"):
+                if self.rag_system and self.is_initialized:
+                    try:
+                        test_result = asyncio.run(self.rag_system.query("test query"))
+                        if test_result and test_result.get('response'):
+                            st.success("✅ RAG system is responding to queries")
+                            st.json({"method": test_result.get('method'), "confidence": test_result.get('confidence')})
+                        else:
+                            st.error("❌ RAG system test failed - no response generated")
+                    except Exception as e:
+                        st.error(f"❌ RAG system test failed: {str(e)}")
+                else:
+                    st.error("❌ RAG system not initialized - cannot run test")
     
     def render_search_results(self, rag_result: Dict[str, Any]):
         """Render Sources & References section with enhanced linking"""
