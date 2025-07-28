@@ -1,24 +1,41 @@
 [global]
+# Development mode for faster reloads
 developmentMode = false
 
 [server]
-headless = true
-enableCORS = false
-enableXsrfProtection = false
-maxUploadSize = 50
+# Safari-optimized server settings
+port = 8501
+address = "localhost"
+baseUrlPath = ""
+enableCORS = true
+enableXsrfProtection = true
+maxUploadSize = 200
+maxMessageSize = 200
+
+# Safari connection and CORS settings
+headless = false
+runOnSave = false
+allowRunOnSave = false
+fileWatcherType = "auto"
+
+# Enhanced Safari support
+enableWebsocketCompression = true
 
 [browser]
-serverAddress = "0.0.0.0"
+# Safari-specific browser settings
+serverAddress = "localhost"
 gatherUsageStats = false
+serverPort = 8501
 
 [theme]
+# Dark theme optimized for Safari rendering
 primaryColor = "#00ff88"
 backgroundColor = "#0f0f23"
-secondaryBackgroundColor = "#1a1a2e"
-textColor = "#ffffff"
+secondaryBackgroundColor = "#1a1a3a"
+textColor = "#e1e8ed"
+font = "sans serif"
 
 [client]
-showErrorDetails = false
-
-[logger]
-level = "info"
+# Safari performance optimizations
+toolbarMode = "auto"
+showSidebarNavigation = true

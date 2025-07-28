@@ -1,46 +1,33 @@
-#!/usr/bin/env python3
-"""
-IntelliSearch - Main Application Entry Point
-Clean implementation that fixes the "about:blank" issue
-
-This is the primary entry point referenced in CLAUDE.md documentation.
-Run with: streamlit run app.py
-"""
 
 import streamlit as st
-import sys
-import os
-from pathlib import Path
+import asyncio
+from simple_rag_system import SimpleRAGSystem
 
-# Set page config FIRST - this must be the very first Streamlit command
-st.set_page_config(
-    page_title="IntelliSearch",
-    page_icon="🚀",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+# Initialize the RAG system
+if 'rag_system' not in st.session_state:
+    st.session_state.rag_system = SimpleRAGSystem()
+    # Run the async initialization
+    asyncio.run(st.session_state.rag_system.initialize())
 
-# Add the current directory to the path for imports
-current_dir = Path(__file__).parent
-sys.path.insert(0, str(current_dir))
+st.title("IntelliSearch")
 
-# Import and run the clean streamlit app
-try:
-    from streamlit_app import main
-    main()
-except ImportError as e:
-    st.error("🚨 Failed to import IntelliSearch components")
-    st.error(f"Import error: {str(e)}")
-    
-    st.info("💡 **Troubleshooting Steps:**")
-    st.info("1. Ensure you're in the correct directory (NEW_RAG)")
-    st.info("2. Install dependencies: `pip install -r requirements.txt`")
-    st.info("3. Check Python version compatibility (3.11+ recommended)")
-    
-except Exception as e:
-    import traceback
-    st.error("🚨 Unexpected application error")
-    st.error(f"Error: {str(e)}")
-    
-    with st.expander("🔍 Full Error Details"):
-        st.code(traceback.format_exc())
+query = st.text_input("Ask a question:")
+
+if st.button("Search"):
+    if query:
+        with st.spinner("Searching..."):
+            # Run the async search query
+            result = asyncio.run(st.session_state.rag_system.search_query(query))
+            
+            st.subheader("Response")
+            st.write(result.get("response", "No response generated."))
+            
+            st.subheader("Sources")
+            sources = result.get("sources", [])
+            if sources:
+                for source in sources:
+                    st.write(f"- **{source.get('title', 'Unknown Title')}** (Source: {source.get('source', 'Unknown Source')})")
+            else:
+                st.write("No sources found.")
+    else:
+        st.warning("Please enter a question.")
