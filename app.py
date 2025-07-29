@@ -873,6 +873,20 @@ def show_system_status():
                     if system_info.get('knowledge_base_available'):
                         details.append("✅ Consolidated knowledge base loaded successfully")
                     
+                    # Show AI model configuration (OpenAI/Ollama status)
+                    config_info = system_info.get('configuration', {})
+                    if config_info.get('openai_available'):
+                        model = config_info.get('openai_model', 'gpt-4o-mini')
+                        cost = config_info.get('estimated_cost_per_query', '$0.001')
+                        details.append(f"🚀 AI: {model} ({cost}/query)")
+                        status_items.append("🤖 OpenAI Ready")
+                    else:
+                        # Check if we're on Streamlit Cloud and missing API key
+                        if env_info.get('streamlit_cloud'):
+                            details.append("⚠️ OpenAI API key needed for cloud deployment")
+                        else:
+                            details.append("🤖 Local AI: Ollama fallback mode")
+                    
                 except Exception as e:
                     details.append(f"⚠️ System info error: {str(e)[:50]}...")
         

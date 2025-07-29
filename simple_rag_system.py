@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Simple RAG System - Clean implementation of RAG + Web Search
-Direct implementation: Query -> Vector Search -> Local/Web -> Ollama Response
+Direct implementation: Query -> Vector Search -> Local/Web -> OpenAI Response
+Cost-optimized for recruiter showcase with gpt-4o-mini
 """
 
 import asyncio
@@ -38,6 +39,14 @@ except ImportError:
     WEB_SEARCH_AVAILABLE = False
     print("⚠️ web_search_manager not available")
 
+# OpenAI integration with fallback
+try:
+    from openai import AsyncOpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    print("⚠️ openai not available")
+
 @dataclass
 class SearchResult:
     """Simple search result structure"""
@@ -64,7 +73,25 @@ class SimpleRAGSystem:
         if WEB_SEARCH_AVAILABLE:
             self.web_search_manager = UniversalWebSearchManager()
         
-        # Ollama configuration
+        # OpenAI configuration - cost-optimized for recruiter showcase
+        self.openai_client = None
+        self.openai_api_key = self._get_openai_api_key()
+        self.openai_model = self._get_env_or_secret('OPENAI_MODEL', 'gpt-4o-mini')  # Cheapest model (~$0.001/query)
+        self.max_tokens = int(self._get_env_or_secret('OPENAI_MAX_TOKENS', '150'))  # Cost control
+        self.openai_available = False
+        
+        # Initialize OpenAI client if API key is available
+        if OPENAI_AVAILABLE and self.openai_api_key:
+            try:
+                self.openai_client = AsyncOpenAI(api_key=self.openai_api_key)
+                self.openai_available = True
+                print(f"✅ OpenAI initialized with model: {self.openai_model}")
+            except Exception as e:
+                print(f"⚠️ OpenAI initialization failed: {e}")
+        elif not self.openai_api_key:
+            print("⚠️ OpenAI API key not found in environment variables")
+        
+        # Legacy Ollama configuration (fallback for local development)
         self.ollama_url = "http://localhost:11434"
         self.ollama_model = "llama3.2:3b"  # Default model
         
@@ -81,6 +108,40 @@ class SimpleRAGSystem:
         self.documents_path = self.storage_dir / "documents.pkl"
         
         print("✅ Simple RAG System initialized")
+    
+    def _get_env_or_secret(self, key: str, default: str = None) -> str:
+        """Get value from environment variable or Streamlit secrets"""
+        # First try environment variable
+        value = os.getenv(key)
+        if value:
+            return value
+        
+        # Try Streamlit secrets if available
+        try:
+            import streamlit as st
+            if hasattr(st, 'secrets') and key in st.secrets:
+                return st.secrets[key]
+        except (ImportError, AttributeError, KeyError):
+            pass
+        
+        return default
+    
+    def _get_openai_api_key(self) -> str:
+        """Get OpenAI API key from environment or Streamlit secrets"""
+        # Try environment variable first (.env file)
+        api_key = os.getenv('OPENAI_API_KEY')
+        if api_key:
+            return api_key
+        
+        # Try Streamlit secrets for cloud deployment
+        try:
+            import streamlit as st
+            if hasattr(st, 'secrets') and 'OPENAI_API_KEY' in st.secrets:
+                return st.secrets['OPENAI_API_KEY']
+        except (ImportError, AttributeError, KeyError):
+            pass
+        
+        return None
     
     async def initialize(self) -> bool:
         """Initialize all components with graceful degradation"""
@@ -596,7 +657,13 @@ class SimpleRAGSystem:
                 "documents_path_exists": self.documents_path.exists()
             },
             "configuration": {
+                # AI Model Configuration
+                "openai_available": self.openai_available,
+                "openai_model": self.openai_model if self.openai_available else "Not configured",
+                "openai_max_tokens": self.max_tokens if self.openai_available else "N/A",
+                "estimated_cost_per_query": "$0.001" if self.openai_available and "gpt-4o-mini" in self.openai_model else "N/A",
                 "ollama_model": self.ollama_model,
+                # Search Configuration
                 "similarity_threshold": self.similarity_threshold,
                 "max_local_results": self.max_local_results,
                 "max_web_results": self.max_web_results
@@ -679,9 +746,8 @@ class SimpleRAGSystem:
             if not search_results:
                 return self._error_response("No search results found")
             
-            # Step 4: Generate response with Ollama
-            print("🤖 Generating response with Ollama...")
-            response = await self._generate_ollama_response(query, search_results)
+            # Step 4: Generate response with smart LLM selection (OpenAI-first for cloud)
+            response = await self._generate_smart_response(query, search_results)
             
             processing_time = time.time() - start_time
             print(f"⚡ Query processed in {processing_time:.2f}s")
@@ -852,15 +918,94 @@ Provide a clear, direct answer. Cite sources using [Source X] format when releva
         # This shouldn't be reached, but just in case
         return "Unable to generate response after multiple attempts. Please try again later."
     
-    async def _generate_simple_response(self, query: str, search_results: List[SearchResult]) -> str:
-        """Generate a simple response when Ollama is not available"""
+    async def _generate_openai_response(self, query: str, search_results: List[SearchResult]) -> str:
+        """Generate cost-optimized response using OpenAI with gpt-4o-mini"""
+        if not self.openai_available or not self.openai_client:
+            return "OpenAI service is not available. Please check your API key configuration."
+        
         try:
-            # First try Ollama if it becomes available
-            if await self._check_ollama_health():
-                return await self._generate_ollama_response(query, search_results)
+            # Prepare context from search results with cost optimization
+            context_parts = []
+            for i, result in enumerate(search_results[:3], 1):  # Limit to 3 sources for cost
+                # Optimize content length for cost efficiency
+                content = result.content[:800] if result.content else ""  # Reduced from 1500
+                context_parts.append(f"[Source {i}] {result.title}\n{content}\n")
             
+            context = "\n".join(context_parts)
+            
+            # Cost-optimized context size (targeting ~2000 input tokens)
+            if len(context) > 4000:  # Reduced from 8000
+                context = context[:4000] + "\n[Context truncated for cost optimization]"
+            
+            # Cost-optimized prompt - concise but effective
+            prompt = f"""Answer the question clearly and concisely based on the provided sources. Be specific and factual.
+
+SOURCES:
+{context}
+
+QUESTION: {query}
+
+ANSWER:"""
+            
+            # Call OpenAI API with cost optimization
+            response = await self.openai_client.chat.completions.create(
+                model=self.openai_model,  # gpt-4o-mini
+                messages=[
+                    {"role": "system", "content": "You are a helpful AI assistant that provides accurate, concise answers based on provided sources. Focus on being informative while staying concise."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=self.max_tokens,  # Cost control (default 150)
+                temperature=0.3,  # More focused responses
+                stream=False
+            )
+            
+            if response and response.choices and response.choices[0].message:
+                answer = response.choices[0].message.content.strip()
+                
+                # Add cost tracking info (for development)
+                tokens_used = response.usage.total_tokens if response.usage else "unknown"
+                estimated_cost = (tokens_used * 0.0000015) if isinstance(tokens_used, int) else 0  # gpt-4o-mini pricing
+                print(f"💰 OpenAI usage: {tokens_used} tokens, ~${estimated_cost:.4f}")
+                
+                return answer if answer else "I couldn't generate a response based on the available information."
+            else:
+                return "I received an empty response from the AI service. Please try again."
+                
+        except Exception as e:
+            print(f"⚠️ OpenAI generation failed: {e}")
+            return f"I found relevant information but couldn't generate a response due to a technical issue: {str(e)}. Please check your OpenAI API key and try again."
+    
+    async def _generate_smart_response(self, query: str, search_results: List[SearchResult]) -> str:
+        """Smart LLM selection with OpenAI-first approach for cloud deployment"""
+        # Detect environment - prioritize OpenAI for cloud deployment
+        is_streamlit_cloud = os.getenv('STREAMLIT_SHARING_MODE') or os.getenv('STREAMLIT_CLOUD')
+        
+        # OpenAI-first approach (best for cloud deployment and recruiter showcase)
+        if self.openai_available:
+            print("🚀 Generating response with OpenAI (gpt-4o-mini)...")
+            try:
+                return await self._generate_openai_response(query, search_results)
+            except Exception as e:
+                print(f"⚠️ OpenAI failed, trying fallback: {e}")
+        
+        # Fallback to Ollama for local development (if available)
+        if not is_streamlit_cloud:
+            print("🤖 Trying Ollama as fallback...")
+            try:
+                if await self._check_ollama_health():
+                    return await self._generate_ollama_response(query, search_results)
+            except Exception as e:
+                print(f"⚠️ Ollama fallback failed: {e}")
+        
+        # Final fallback to simple response
+        print("📝 Using simple response generation...")
+        return await self._generate_simple_response(query, search_results)
+    
+    async def _generate_simple_response(self, query: str, search_results: List[SearchResult]) -> str:
+        """Generate a simple response when both OpenAI and Ollama are unavailable"""
+        try:
             # Fallback to simple text compilation
-            print("🔤 Generating simple response (Ollama unavailable)")
+            print("🔤 Generating simple response (AI services unavailable)")
             
             if not search_results:
                 return "I couldn't find any relevant information for your query. Please try a different question or check your connection."
