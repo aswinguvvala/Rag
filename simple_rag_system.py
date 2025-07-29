@@ -763,13 +763,37 @@ class SimpleRAGSystem:
             
             print(f"📋 DEBUG - Final search results: {len(search_results) if search_results else 0}")
             
+            # Smart fallback system - never return "No search results found"
             if not search_results:
-                print("❌ DEBUG - No search results found! This is the problem.")
+                print("🚨 DEBUG - No search results found! Applying smart fallbacks...")
                 print(f"   Local results available: {len(local_results) if local_results else 0}")
                 print(f"   Best local similarity: {local_results[0].similarity if local_results else 'N/A'}")
                 print(f"   Similarity threshold: {self.similarity_threshold}")
                 print(f"   Web search attempted: {search_method == 'web_search'}")
-                return self._error_response("No search results found")
+                
+                # Fallback 1: Use local results with lower threshold (0.2)
+                if local_results and local_results[0].similarity >= 0.2:
+                    print(f"🆘 FALLBACK 1: Using local results with lowered threshold (similarity: {local_results[0].similarity:.3f})")
+                    search_results = local_results[:self.max_local_results]
+                    search_method = "local_search_emergency"
+                
+                # Fallback 2: Use any local results as last resort
+                elif local_results:
+                    print(f"🆘 FALLBACK 2: Using best local results regardless of similarity (similarity: {local_results[0].similarity:.3f})")
+                    search_results = local_results[:self.max_local_results]
+                    search_method = "local_search_desperate"
+                
+                # Fallback 3: Create a helpful error response explaining the issue
+                else:
+                    print("🆘 FALLBACK 3: No local results available, creating informative error response")
+                    error_msg = f"I'm having trouble finding information about '{query}'. "
+                    
+                    if search_method == "web_search":
+                        error_msg += "Both my knowledge base and web search didn't return useful results. This might be due to a temporary network issue or the query being too specific. Please try rephrasing your question or try again in a moment."
+                    else:
+                        error_msg += "This topic isn't in my knowledge base and web search isn't available. Please try a question related to space, science, or technology topics that I have information about."
+                    
+                    return self._error_response(error_msg)
             
             # Step 4: Generate response with smart LLM selection (OpenAI-first for cloud)
             response = await self._generate_smart_response(query, search_results)
@@ -818,17 +842,29 @@ class SimpleRAGSystem:
             return []
     
     async def _search_web(self, query: str) -> List[SearchResult]:
-        """Search web using DuckDuckGo"""
+        """Search web using DuckDuckGo with comprehensive debugging"""
+        print(f"🌐 DEBUG - Starting web search for: '{query}'")
+        
+        # Check web search manager availability
         if not self.web_search_manager:
-            print("⚠️ Web search not available")
+            print("❌ DEBUG - Web search manager not available")
+            print(f"   WEB_SEARCH_AVAILABLE: {WEB_SEARCH_AVAILABLE}")
+            print(f"   web_search_manager: {self.web_search_manager}")
             return []
         
+        print(f"✅ DEBUG - Web search manager available")
+        
         try:
-            # Use web search manager
+            print(f"🔍 DEBUG - Calling web_search_manager.search()...")
             web_results = await self.web_search_manager.search(query, max_results=self.max_web_results)
             
+            print(f"📊 DEBUG - Raw web search returned: {len(web_results) if web_results else 0} results")
+            if web_results:
+                print(f"📋 DEBUG - First result type: {type(web_results[0])}")
+                print(f"📋 DEBUG - First result attributes: {dir(web_results[0])}")
+            
             results = []
-            for result in web_results:
+            for i, result in enumerate(web_results):
                 # Extract content from web SearchResult object
                 content = result.content if hasattr(result, 'content') and result.content else (
                     result.snippet if hasattr(result, 'snippet') and result.snippet else ""
@@ -836,19 +872,29 @@ class SimpleRAGSystem:
                 title = result.title if hasattr(result, 'title') and result.title else "Web Result"
                 url = result.url if hasattr(result, 'url') and result.url else "Web Search"
                 
-                results.append(SearchResult(
-                    content=content[:1000] if content else "",  # Limit content size
-                    title=title,
-                    source=url,
-                    similarity=0.8,  # Default similarity for web results
-                    source_type="web"
-                ))
+                print(f"   {i+1}. Title: {title[:50]}...")
+                print(f"      Content length: {len(content) if content else 0}")
+                print(f"      URL: {url[:50]}...")
+                
+                if content:  # Only add results with actual content
+                    results.append(SearchResult(
+                        content=content[:1000] if content else "",  # Limit content size
+                        title=title,
+                        source=url,
+                        similarity=0.8,  # Default similarity for web results
+                        source_type="web"
+                    ))
+                else:
+                    print(f"      ⚠️ Skipping result {i+1} - no content")
             
-            print(f"🌐 Found {len(results)} web results")
+            print(f"✅ DEBUG - Processed {len(results)} usable web results")
             return results
             
         except Exception as e:
-            print(f"⚠️ Web search failed: {e}")
+            print(f"❌ DEBUG - Web search exception: {e}")
+            print(f"❌ DEBUG - Exception type: {type(e)}")
+            import traceback
+            print(f"❌ DEBUG - Traceback: {traceback.format_exc()}")
             return []
     
     async def _check_ollama_health(self) -> bool:
