@@ -3,27 +3,27 @@
 developmentMode = false
 
 [server]
-# Safari-optimized server settings
+# Server settings optimized for cloud deployment
 port = 8501
-address = "localhost"
+address = "0.0.0.0"
 baseUrlPath = ""
-enableCORS = true
-enableXsrfProtection = true
+enableCORS = false
+enableXsrfProtection = false
 maxUploadSize = 200
 maxMessageSize = 200
 
-# Safari connection and CORS settings
-headless = false
+# Cloud deployment settings
+headless = true
 runOnSave = false
 allowRunOnSave = false
 fileWatcherType = "auto"
 
-# Enhanced Safari support
+# Performance optimization
 enableWebsocketCompression = true
 
 [browser]
-# Safari-specific browser settings
-serverAddress = "localhost"
+# Browser settings for cloud deployment
+serverAddress = "0.0.0.0"
 gatherUsageStats = false
 serverPort = 8501
 

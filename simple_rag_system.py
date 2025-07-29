@@ -83,24 +83,50 @@ class SimpleRAGSystem:
         print("✅ Simple RAG System initialized")
     
     async def initialize(self) -> bool:
-        """Initialize all components"""
+        """Initialize all components with graceful degradation"""
         print("🔧 Initializing RAG components...")
+        
+        success_count = 0
+        total_components = 3
         
         try:
             # Initialize embedding model
-            if not await self._init_embedding_model():
-                return False
+            try:
+                if await self._init_embedding_model():
+                    success_count += 1
+                    print("✅ Embedding model initialized")
+                else:
+                    print("⚠️ Embedding model failed, but continuing...")
+            except Exception as e:
+                print(f"⚠️ Embedding model error: {e}, continuing...")
             
             # Load or create document index
-            if not await self._init_document_index():
+            try:
+                if await self._init_document_index():
+                    success_count += 1
+                    print("✅ Document index initialized")
+                else:
+                    print("⚠️ Document index failed, but continuing...")
+            except Exception as e:
+                print(f"⚠️ Document index error: {e}, continuing...")
+            
+            # Test Ollama connection (non-blocking)
+            try:
+                if await self._test_ollama():
+                    success_count += 1
+                    print("✅ Ollama connection verified")
+                else:
+                    print("⚠️ Ollama not available, web search only mode")
+            except Exception as e:
+                print(f"⚠️ Ollama test error: {e}, web search only mode")
+            
+            # System is functional if at least embedding model works
+            if success_count >= 1:
+                print(f"✅ RAG System initialized ({success_count}/{total_components} components active)")
+                return True
+            else:
+                print("❌ Critical components failed, system may not function properly")
                 return False
-            
-            # Test Ollama connection
-            if not await self._test_ollama():
-                print("⚠️ Ollama not available, but continuing...")
-            
-            print("✅ RAG System fully initialized")
-            return True
             
         except Exception as e:
             print(f"❌ Initialization failed: {e}")
@@ -290,7 +316,19 @@ class SimpleRAGSystem:
         try:
             # Step 1: Convert query to embeddings
             if not self.embedding_model:
-                return self._error_response("Embedding model not available")
+                print("⚠️ Embedding model not available, using web search only")
+                web_results = await self._search_web(query)
+                if web_results:
+                    response = await self._generate_simple_response(query, web_results)
+                    return {
+                        "response": response,
+                        "sources": [{"title": r.title, "content": r.content[:200] + "...", "source": r.source, "similarity": r.similarity, "source_type": r.source_type} for r in web_results],
+                        "method": "web_search_only",
+                        "processing_time": time.time() - start_time,
+                        "query": query
+                    }
+                else:
+                    return self._error_response("Neither embedding model nor web search available")
             
             query_embedding = self.embedding_model.encode([query], convert_to_numpy=True)
             faiss.normalize_L2(query_embedding)
@@ -418,17 +456,17 @@ class SimpleRAGSystem:
                 context_parts = []
                 for i, result in enumerate(search_results, 1):
                     # Limit individual context size to prevent token overflow
-                    content = result.content[:800] if result.content else ""
+                    content = result.content[:1500] if result.content else ""
                     context_parts.append(f"[Source {i}] {result.title}\n{content}\n")
                 
                 context = "\n".join(context_parts)
                 
                 # Limit total context size for better Ollama performance
-                if len(context) > 4000:
-                    context = context[:4000] + "\n[Context truncated for performance]"
+                if len(context) > 8000:
+                    context = context[:8000] + "\n[Context truncated for performance]"
                 
-                # Create confident, direct prompt
-                prompt = f"""Answer the user's question directly and confidently based on the provided information. When sources clearly state facts (like 'Team A defeated Team B'), respond definitively ('Team A won'). Only mention uncertainty if sources genuinely contradict each other or information is missing.
+                # Create confident, comprehensive prompt
+                prompt = f"""Answer the user's question thoroughly and confidently based on the provided information. Provide comprehensive details, explanations, and context. When sources clearly state facts, respond definitively. Include relevant background information and elaborate on key concepts to give the user a complete understanding of the topic.
 
 CONTEXT:
 {context}
@@ -447,7 +485,7 @@ Provide a clear, direct answer. Cite sources using [Source X] format when releva
                         "options": {
                             "temperature": 0.2,  # More decisive, less random
                             "top_p": 0.8,        # More focused responses
-                            "max_tokens": 600    # Force conciseness
+                            "max_tokens": 1500   # Allow detailed responses
                         }
                     }
                     
@@ -486,6 +524,41 @@ Provide a clear, direct answer. Cite sources using [Source X] format when releva
         
         # This shouldn't be reached, but just in case
         return "Unable to generate response after multiple attempts. Please try again later."
+    
+    async def _generate_simple_response(self, query: str, search_results: List[SearchResult]) -> str:
+        """Generate a simple response when Ollama is not available"""
+        try:
+            # First try Ollama if it becomes available
+            if await self._check_ollama_health():
+                return await self._generate_ollama_response(query, search_results)
+            
+            # Fallback to simple text compilation
+            print("🔤 Generating simple response (Ollama unavailable)")
+            
+            if not search_results:
+                return "I couldn't find any relevant information for your query. Please try a different question or check your connection."
+            
+            # Create a simple response by combining search results
+            response_parts = [
+                f"Based on my search, here's what I found about '{query}':\n"
+            ]
+            
+            for i, result in enumerate(search_results[:3], 1):
+                content = result.content[:300] if result.content else "No content available"
+                response_parts.append(f"{i}. **{result.title}**")
+                response_parts.append(f"   {content}")
+                response_parts.append(f"   Source: {result.source}\n")
+            
+            if len(search_results) > 3:
+                response_parts.append(f"...and {len(search_results) - 3} more results found.")
+            
+            response_parts.append("\n*Note: AI response generation is currently unavailable. This is a compilation of search results.*")
+            
+            return "\n".join(response_parts)
+            
+        except Exception as e:
+            print(f"⚠️ Simple response generation failed: {e}")
+            return f"I found some information about '{query}' but couldn't format it properly. Please try again or check the sources directly."
     
     def _error_response(self, message: str) -> Dict[str, Any]:
         """Generate error response"""
