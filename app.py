@@ -837,41 +837,7 @@ def show_system_status():
                 try:
                     system_info = rag_system.get_system_info()
                     
-                    # Show data source information
-                    data_source = system_info.get('data_source', 'Unknown')
-                    details.append(f"🗃️ Data Source: {data_source}")
-                    
-                    # Show categories if we have substantial content
-                    categories = system_info.get('document_categories', [])
-                    total_categories = system_info.get('total_categories', 0)
-                    
-                    if categories and doc_count > 10:
-                        # Show top categories
-                        category_display = ', '.join(categories[:4])
-                        if total_categories > 4:
-                            category_display += f" (+{total_categories-4} more)"
-                        details.append(f"📊 Knowledge Domains: {category_display}")
-                        
-                        # Show content statistics for large datasets
-                        if doc_count > 100:
-                            content_stats = system_info.get('content_stats', {})
-                            total_chars = content_stats.get('total_characters', 'N/A')
-                            avg_length = content_stats.get('avg_content_length', 0)
-                            details.append(f"📈 Content: {total_chars} chars, avg {avg_length} per article")
-                    
-                    # Show environment info
-                    env_info = system_info.get('environment', {})
-                    if env_info.get('streamlit_cloud'):
-                        if doc_count > 1000:
-                            details.append("🌐 Streamlit Cloud with Consolidated Knowledge Base")
-                        else:
-                            details.append("🌐 Streamlit Cloud with Enhanced Fallback Dataset")
-                    else:
-                        details.append("💻 Local Environment with Full Knowledge Base")
-                        
-                    # Show knowledge base availability
-                    if system_info.get('knowledge_base_available'):
-                        details.append("✅ Consolidated knowledge base loaded successfully")
+                    # Minimal status - no detailed information
                     
                     # Show AI model configuration (OpenAI/Ollama status)
                     config_info = system_info.get('configuration', {})

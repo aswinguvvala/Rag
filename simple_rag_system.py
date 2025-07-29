@@ -96,7 +96,7 @@ class SimpleRAGSystem:
         self.ollama_model = "llama3.2:3b"  # Default model
         
         # Search configuration - optimized for cloud deployment
-        self.similarity_threshold = 0.2  # More permissive threshold for better matching (was 0.35)
+        self.similarity_threshold = 0.4  # Higher threshold for quality results
         self.fallback_threshold = 0.1   # Emergency fallback threshold
         self.max_local_results = 5  # More local results (was 3)
         self.max_web_results = 3  # Fewer web results to reduce latency (was 5)
