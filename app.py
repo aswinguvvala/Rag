@@ -876,9 +876,6 @@ def show_system_status():
                     # Show AI model configuration (OpenAI/Ollama status)
                     config_info = system_info.get('configuration', {})
                     if config_info.get('openai_available'):
-                        model = config_info.get('openai_model', 'gpt-4o-mini')
-                        cost = config_info.get('estimated_cost_per_query', '$0.001')
-                        details.append(f"🚀 AI: {model} ({cost}/query)")
                         status_items.append("🤖 OpenAI Ready")
                     else:
                         # Check if we're on Streamlit Cloud and missing API key

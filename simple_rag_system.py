@@ -96,7 +96,8 @@ class SimpleRAGSystem:
         self.ollama_model = "llama3.2:3b"  # Default model
         
         # Search configuration - optimized for cloud deployment
-        self.similarity_threshold = 0.35  # Lower threshold for better local results (was 0.45)
+        self.similarity_threshold = 0.2  # More permissive threshold for better matching (was 0.35)
+        self.fallback_threshold = 0.1   # Emergency fallback threshold
         self.max_local_results = 5  # More local results (was 3)
         self.max_web_results = 3  # Fewer web results to reduce latency (was 5)
         
@@ -708,10 +709,19 @@ class SimpleRAGSystem:
         start_time = time.time()
         
         try:
+            # Debug: Check system state
+            print(f"🔧 DEBUG - System State:")
+            print(f"   Embedding model available: {self.embedding_model is not None}")
+            print(f"   FAISS index available: {self.faiss_index is not None}")
+            print(f"   Documents loaded: {len(self.documents) if self.documents else 0}")
+            print(f"   Web search available: {self.web_search_manager is not None}")
+            print(f"   Similarity threshold: {self.similarity_threshold}")
+            
             # Step 1: Convert query to embeddings
             if not self.embedding_model:
                 print("⚠️ Embedding model not available, using web search only")
                 web_results = await self._search_web(query)
+                print(f"🌐 DEBUG - Web search returned {len(web_results) if web_results else 0} results")
                 if web_results:
                     response = await self._generate_simple_response(query, web_results)
                     return {
@@ -724,26 +734,61 @@ class SimpleRAGSystem:
                 else:
                     return self._error_response("Neither embedding model nor web search available")
             
+            print("🧠 Generating query embedding...")
             query_embedding = self.embedding_model.encode([query], convert_to_numpy=True)
             faiss.normalize_L2(query_embedding)
+            print(f"✅ Query embedding shape: {query_embedding.shape}")
             
             # Step 2: Search local FAISS index
             print("📚 Searching local space documents...")
             local_results = await self._search_local(query_embedding, query)
+            print(f"📊 DEBUG - Local search returned {len(local_results) if local_results else 0} results")
             
-            # Step 3: Decide local vs web search based on similarity
+            if local_results:
+                print(f"📈 DEBUG - Top local results:")
+                for i, result in enumerate(local_results[:3]):
+                    print(f"   {i+1}. Similarity: {result.similarity:.3f}, Title: {result.title[:50]}...")
+            
+            # Step 3: Decide local vs web search with fallback logic
+            search_results = []
+            search_method = "unknown"
+            
+            # Try primary threshold first
             if local_results and local_results[0].similarity >= self.similarity_threshold:
                 print(f"✅ Using local results (similarity: {local_results[0].similarity:.3f})")
                 search_results = local_results[:self.max_local_results]
                 search_method = "local_search"
+            
+            # Try fallback threshold if no good results
+            elif local_results and local_results[0].similarity >= self.fallback_threshold:
+                print(f"⚠️ Using local results with fallback threshold (similarity: {local_results[0].similarity:.3f})")
+                search_results = local_results[:self.max_local_results]
+                search_method = "local_search_fallback"
+            
+            # Web search as last resort
             else:
                 best_similarity = local_results[0].similarity if local_results else 0.0
-                print(f"🌐 Using web search (best local similarity: {best_similarity:.3f})")
+                print(f"🌐 Using web search (best local similarity: {best_similarity:.3f} < threshold {self.similarity_threshold})")
                 web_results = await self._search_web(query)
-                search_results = web_results[:self.max_web_results]
-                search_method = "web_search"
+                print(f"🌐 DEBUG - Web search returned {len(web_results) if web_results else 0} results")
+                if web_results:
+                    search_results = web_results[:self.max_web_results]
+                    search_method = "web_search"
+                
+                # Emergency fallback: use any local results if web search fails
+                elif local_results:
+                    print(f"🚨 Emergency fallback: using best local results (similarity: {local_results[0].similarity:.3f})")
+                    search_results = local_results[:self.max_local_results]
+                    search_method = "emergency_local"
+            
+            print(f"📋 DEBUG - Final search results: {len(search_results) if search_results else 0}")
             
             if not search_results:
+                print("❌ DEBUG - No search results found! This is the problem.")
+                print(f"   Local results available: {len(local_results) if local_results else 0}")
+                print(f"   Best local similarity: {local_results[0].similarity if local_results else 'N/A'}")
+                print(f"   Similarity threshold: {self.similarity_threshold}")
+                print(f"   Web search attempted: {search_method == 'web_search'}")
                 return self._error_response("No search results found")
             
             # Step 4: Generate response with smart LLM selection (OpenAI-first for cloud)
