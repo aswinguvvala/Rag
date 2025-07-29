@@ -814,60 +814,10 @@ st.markdown(cosmic_title_html, unsafe_allow_html=True)
 
 # --- System Status Indicator ---
 def show_system_status():
-    """Show enhanced system status with detailed information"""
-    try:
-        status_items = []
-        details = []
-        
-        # Check embedding model
-        if hasattr(rag_system, 'embedding_model') and rag_system.embedding_model:
-            status_items.append("🧠 AI Embeddings")
-        
-        # Check web search
-        if hasattr(rag_system, 'web_search_manager') and rag_system.web_search_manager:
-            status_items.append("🌐 Web Search")
-        
-        # Check documents with detailed info
-        if hasattr(rag_system, 'documents') and rag_system.documents:
-            doc_count = len(rag_system.documents)
-            status_items.append(f"📚 {doc_count} Documents")
-            
-            # Get detailed system information
-            if hasattr(rag_system, 'get_system_info'):
-                try:
-                    system_info = rag_system.get_system_info()
-                    
-                    # Minimal status - no detailed information
-                    
-                    # Show AI model configuration (OpenAI/Ollama status)
-                    config_info = system_info.get('configuration', {})
-                    if config_info.get('openai_available'):
-                        status_items.append("🤖 OpenAI Ready")
-                    else:
-                        # Check if we're on Streamlit Cloud and missing API key
-                        if env_info.get('streamlit_cloud'):
-                            details.append("⚠️ OpenAI API key needed for cloud deployment")
-                        else:
-                            details.append("🤖 Local AI: Ollama fallback mode")
-                    
-                except Exception as e:
-                    details.append(f"⚠️ System info error: {str(e)[:50]}...")
-        
-        if status_items:
-            status_text = " | ".join(status_items)
-            st.markdown(f"<div style='text-align: center; color: #4a90e2; font-size: 14px; margin-bottom: 10px;'>✅ Active: {status_text}</div>", unsafe_allow_html=True)
-            
-            # Show additional details if available
-            if details:
-                details_text = "<br>".join(details)
-                st.markdown(f"<div style='text-align: center; color: #7a7a7a; font-size: 12px; margin-bottom: 20px;'>{details_text}</div>", unsafe_allow_html=True)
-        else:
-            st.markdown("<div style='text-align: center; color: #ff6b6b; font-size: 14px; margin-bottom: 20px;'>⚠️ Limited functionality - some services unavailable</div>", unsafe_allow_html=True)
-    except Exception as e:
-        # Show minimal fallback info
-        st.markdown(f"<div style='text-align: center; color: #7a7a7a; font-size: 12px; margin-bottom: 20px;'>ℹ️ System initializing...</div>", unsafe_allow_html=True)
+    """Clean interface - no status display"""
+    pass
 
-show_system_status()
+# Removed status display for clean interface
 
 # --- Search Bar and Buttons ---
 query = st.text_input(

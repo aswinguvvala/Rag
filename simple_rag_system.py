@@ -97,7 +97,6 @@ class SimpleRAGSystem:
         
         # Search configuration - optimized for cloud deployment
         self.similarity_threshold = 0.4  # Higher threshold for quality results
-        self.fallback_threshold = 0.1   # Emergency fallback threshold
         self.max_local_results = 5  # More local results (was 3)
         self.max_web_results = 3  # Fewer web results to reduce latency (was 5)
         
@@ -749,37 +748,18 @@ class SimpleRAGSystem:
                 for i, result in enumerate(local_results[:3]):
                     print(f"   {i+1}. Similarity: {result.similarity:.3f}, Title: {result.title[:50]}...")
             
-            # Step 3: Decide local vs web search with fallback logic
-            search_results = []
-            search_method = "unknown"
-            
-            # Try primary threshold first
+            # Step 3: Simple binary decision - local vs web search
             if local_results and local_results[0].similarity >= self.similarity_threshold:
                 print(f"✅ Using local results (similarity: {local_results[0].similarity:.3f})")
                 search_results = local_results[:self.max_local_results]
                 search_method = "local_search"
-            
-            # Try fallback threshold if no good results
-            elif local_results and local_results[0].similarity >= self.fallback_threshold:
-                print(f"⚠️ Using local results with fallback threshold (similarity: {local_results[0].similarity:.3f})")
-                search_results = local_results[:self.max_local_results]
-                search_method = "local_search_fallback"
-            
-            # Web search as last resort
             else:
                 best_similarity = local_results[0].similarity if local_results else 0.0
                 print(f"🌐 Using web search (best local similarity: {best_similarity:.3f} < threshold {self.similarity_threshold})")
                 web_results = await self._search_web(query)
                 print(f"🌐 DEBUG - Web search returned {len(web_results) if web_results else 0} results")
-                if web_results:
-                    search_results = web_results[:self.max_web_results]
-                    search_method = "web_search"
-                
-                # Emergency fallback: use any local results if web search fails
-                elif local_results:
-                    print(f"🚨 Emergency fallback: using best local results (similarity: {local_results[0].similarity:.3f})")
-                    search_results = local_results[:self.max_local_results]
-                    search_method = "emergency_local"
+                search_results = web_results[:self.max_web_results] if web_results else []
+                search_method = "web_search"
             
             print(f"📋 DEBUG - Final search results: {len(search_results) if search_results else 0}")
             
