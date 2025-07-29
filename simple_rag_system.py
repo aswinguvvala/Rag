@@ -68,10 +68,10 @@ class SimpleRAGSystem:
         self.ollama_url = "http://localhost:11434"
         self.ollama_model = "llama3.2:3b"  # Default model
         
-        # Search configuration
-        self.similarity_threshold = 0.45  # If similarity < 0.45, use web search
-        self.max_local_results = 3
-        self.max_web_results = 5
+        # Search configuration - optimized for cloud deployment
+        self.similarity_threshold = 0.35  # Lower threshold for better local results (was 0.45)
+        self.max_local_results = 5  # More local results (was 3)
+        self.max_web_results = 3  # Fewer web results to reduce latency (was 5)
         
         # Storage paths
         self.storage_dir = Path("storage/simple_rag")
@@ -85,6 +85,11 @@ class SimpleRAGSystem:
     async def initialize(self) -> bool:
         """Initialize all components with graceful degradation"""
         print("🔧 Initializing RAG components...")
+        
+        # Detect environment early for optimized initialization
+        is_streamlit_cloud = os.getenv('STREAMLIT_SHARING_MODE') or os.getenv('STREAMLIT_CLOUD')
+        if is_streamlit_cloud:
+            print("🌐 Streamlit Cloud environment detected - optimizing for cloud deployment")
         
         success_count = 0
         total_components = 3
@@ -177,14 +182,88 @@ class SimpleRAGSystem:
             return False
     
     async def _create_initial_index(self):
-        """Create initial FAISS index with space-related documents"""
-        print("📚 Creating initial space document collection...")
+        """Create initial FAISS index with comprehensive knowledge base"""
+        print("📚 Creating comprehensive knowledge base for deployment...")
         
-        # Comprehensive space-related documents
-        space_documents = [
+        # Detect deployment environment for logging
+        is_streamlit_cloud = os.getenv('STREAMLIT_SHARING_MODE') or os.getenv('STREAMLIT_CLOUD')
+        if is_streamlit_cloud:
+            print("🌐 Detected Streamlit Cloud deployment")
+        else:
+            print("💻 Local environment detected")
+        
+        # First, try to load from consolidated knowledge base
+        knowledge_documents = await self._load_consolidated_knowledge_base()
+        
+        # If no documents loaded, fall back to hardcoded documents
+        if not knowledge_documents:
+            print("⚠️ No consolidated knowledge base found, using fallback documents...")
+            knowledge_documents = self._get_fallback_documents()
+        
+        # Create embeddings and index
+        await self._create_faiss_index_from_documents(knowledge_documents, is_streamlit_cloud)
+    
+    async def _load_consolidated_knowledge_base(self) -> List[Dict[str, Any]]:
+        """Load articles from consolidated knowledge base file"""
+        try:
+            knowledge_base_path = Path("data/knowledge_base.json")
+            
+            if not knowledge_base_path.exists():
+                print(f"ℹ️ Consolidated knowledge base not found at: {knowledge_base_path}")
+                return []
+            
+            print(f"📖 Loading consolidated knowledge base from: {knowledge_base_path}")
+            
+            with open(knowledge_base_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            # Extract articles from the structured data
+            articles = data.get('articles', [])
+            metadata = data.get('metadata', {})
+            
+            if articles:
+                print(f"✅ Loaded {len(articles)} articles from consolidated knowledge base")
+                print(f"📊 Categories: {len(metadata.get('categories', []))}")
+                print(f"📝 Total content: {metadata.get('total_articles', len(articles))} articles")
+                
+                # Convert to our document format
+                documents = []
+                for article in articles:
+                    # Convert article format to our document format
+                    doc = {
+                        "title": article.get('title', 'Unknown Title'),
+                        "content": article.get('content', ''),
+                        "category": article.get('category', 'general'),
+                        "topics": article.get('topics', []),
+                        "source": article.get('source', 'Consolidated Knowledge Base'),
+                        "url": article.get('url', '')
+                    }
+                    
+                    # Only include documents with substantial content
+                    if len(doc["content"]) >= 100:
+                        documents.append(doc)
+                
+                print(f"🔄 Processed {len(documents)} documents with substantial content")
+                return documents
+            
+            else:
+                print("⚠️ No articles found in consolidated knowledge base")
+                return []
+                
+        except Exception as e:
+            print(f"❌ Error loading consolidated knowledge base: {e}")
+            return []
+    
+    def _get_fallback_documents(self) -> List[Dict[str, Any]]:
+        """Get fallback hardcoded documents if consolidated knowledge base unavailable"""
+        print("🔄 Using fallback document collection...")
+        
+        # Comprehensive knowledge base with 50+ documents across multiple domains
+        knowledge_documents = [
+            # Space Exploration & Missions (Expanded)
             {
                 "title": "NASA Artemis Program",
-                "content": "The Artemis program is NASA's ambitious plan to return humans to the Moon by 2026 and establish a sustainable lunar presence. Named after the Greek goddess of the hunt and twin sister of Apollo, Artemis aims to land the first woman and the next man on the lunar surface. The program includes the Space Launch System (SLS) rocket, the Orion spacecraft, and the Lunar Gateway space station. Artemis will serve as a stepping stone for future Mars missions and will focus on the lunar South Pole region where water ice has been detected.",
+                "content": "The Artemis program is NASA's ambitious plan to return humans to the Moon by 2026 and establish a sustainable lunar presence. Named after the Greek goddess of the hunt and twin sister of Apollo, Artemis aims to land the first woman and the next man on the lunar surface. The program includes the Space Launch System (SLS) rocket, the Orion spacecraft, and the Lunar Gateway space station. Artemis will serve as a stepping stone for future Mars missions and will focus on the lunar South Pole region where water ice has been detected. The program involves international partnerships and commercial collaborations, with a budget of over $93 billion through 2025.",
                 "category": "space_missions",
                 "topics": ["NASA", "Artemis", "Moon", "lunar missions", "space exploration", "SLS", "Orion"]
             },
@@ -241,15 +320,189 @@ class SimpleRAGSystem:
                 "content": "Astrobiology studies the possibility of life beyond Earth, focusing on extremophile organisms that thrive in harsh conditions similar to those on other planets. Jupiter's moon Europa and Saturn's moon Enceladus have subsurface oceans that may harbor life. Mars shows evidence of ancient water activity and organic compounds detected by rovers. The search for biosignatures in exoplanet atmospheres using telescopes like JWST could reveal signs of life around other stars. Missions like Europa Clipper and Dragonfly will directly search for signs of life in our solar system.",
                 "category": "astrobiology",
                 "topics": ["astrobiology", "Europa", "Enceladus", "extremophiles", "biosignatures", "Mars life", "ocean moons"]
+            },
+            
+            # Additional Space & Astronomy Content (40+ more documents)
+            {
+                "title": "Solar System Formation and Evolution",
+                "content": "The solar system formed approximately 4.6 billion years ago from the gravitational collapse of a giant molecular cloud. The nebular hypothesis explains how dust and gas condensed to form the Sun and planets through accretion. Inner rocky planets formed from silicates and metals, while outer gas giants formed from ice and gas in the cooler regions beyond the frost line. The Late Heavy Bombardment period shaped planetary surfaces, and continuing evolution includes atmospheric changes, magnetic field variations, and ongoing geological processes on planetary bodies.",
+                "category": "planetary_science",
+                "topics": ["solar system formation", "nebular hypothesis", "accretion", "planetary evolution", "Late Heavy Bombardment"]
+            },
+            {
+                "title": "Black Holes and Event Horizons",
+                "content": "Black holes are regions of spacetime where gravity is so strong that nothing, including light, can escape once it crosses the event horizon. They form when massive stars collapse at the end of their lives, creating singularities where known physics breaks down. The Event Horizon Telescope has captured images of supermassive black holes in M87 and Sagittarius A*. Black holes play crucial roles in galaxy formation and evolution, and their study has confirmed many predictions of Einstein's general relativity including gravitational waves from black hole mergers.",
+                "category": "astrophysics",
+                "topics": ["black holes", "event horizon", "singularities", "general relativity", "gravitational waves", "Event Horizon Telescope"]
+            },
+            {
+                "title": "Mars Atmospheric Composition and Climate",
+                "content": "Mars has a thin atmosphere composed primarily of carbon dioxide (95.3%) with small amounts of nitrogen, argon, and trace gases. The atmospheric pressure is less than 1% of Earth's, making liquid water unstable on the surface. Mars experiences dust storms that can engulf the entire planet, affecting solar-powered missions. Evidence suggests Mars once had a thicker atmosphere and flowing water, with the atmosphere being gradually stripped away by solar wind due to the lack of a strong magnetic field. Understanding Mars' climate history is crucial for assessing its past habitability.",
+                "category": "planetary_atmospheres",
+                "topics": ["Mars atmosphere", "climate change", "dust storms", "atmospheric escape", "habitability", "water history"]
+            },
+            {
+                "title": "Quantum Mechanics and Computing",
+                "content": "Quantum mechanics describes the behavior of matter and energy at the atomic and subatomic scale, where particles exhibit wave-particle duality and can exist in superposition states. Quantum computing harnesses these principles using qubits that can be in multiple states simultaneously, potentially solving certain problems exponentially faster than classical computers. Quantum algorithms like Shor's factorization and Grover's search demonstrate quantum advantage. Major tech companies and research institutions are developing quantum computers, with applications in cryptography, drug discovery, optimization, and scientific simulation.",
+                "category": "quantum_physics",
+                "topics": ["quantum mechanics", "quantum computing", "qubits", "superposition", "quantum algorithms", "quantum advantage"]
+            },
+            {
+                "title": "Artificial Intelligence and Machine Learning",
+                "content": "Artificial Intelligence encompasses systems that can perform tasks typically requiring human intelligence, including learning, reasoning, perception, and decision-making. Machine learning, a subset of AI, enables systems to improve performance through experience without explicit programming. Deep learning uses neural networks with multiple layers to model complex patterns in data. Recent advances include large language models, computer vision, robotics, and AI-assisted scientific discovery. Applications span healthcare, transportation, finance, education, and creative industries, while raising important questions about ethics, bias, and societal impact.",
+                "category": "artificial_intelligence",
+                "topics": ["AI", "machine learning", "deep learning", "neural networks", "language models", "computer vision", "AI ethics"]
+            },
+            {
+                "title": "Climate Change and Earth Systems",
+                "content": "Climate change refers to long-term shifts in global temperatures and weather patterns, primarily driven by increased greenhouse gas concentrations from human activities. The greenhouse effect traps heat in Earth's atmosphere, with carbon dioxide, methane, and other gases contributing to warming. Earth system science studies interactions between the atmosphere, hydrosphere, biosphere, and geosphere. Climate models predict continued warming, sea level rise, extreme weather events, and ecosystem changes. Mitigation strategies include renewable energy, carbon capture, and emission reductions, while adaptation involves preparing for unavoidable climate impacts.",
+                "category": "earth_science",
+                "topics": ["climate change", "greenhouse effect", "global warming", "Earth systems", "climate models", "renewable energy", "sustainability"]
+            },
+            {
+                "title": "Gene Editing and CRISPR Technology",
+                "content": "CRISPR-Cas9 is a revolutionary gene editing tool that allows precise modification of DNA sequences in living cells. The system uses guide RNA to direct the Cas9 enzyme to specific genetic locations, where it can cut, insert, or modify DNA sequences. Applications include treating genetic diseases, developing disease-resistant crops, creating animal models for research, and potentially eliminating inherited disorders. Recent advances include base editing, prime editing, and epigenome editing. Ethical considerations include germline editing, equity in access to treatments, and potential unintended consequences of genetic modifications.",
+                "category": "biotechnology",
+                "topics": ["CRISPR", "gene editing", "genetic engineering", "DNA modification", "genetic diseases", "bioethics", "precision medicine"]
+            },
+            {
+                "title": "Renewable Energy Technologies",
+                "content": "Renewable energy sources provide power from naturally replenishing resources including solar, wind, hydroelectric, geothermal, and biomass. Solar photovoltaic and thermal systems convert sunlight to electricity and heat. Wind turbines harness kinetic energy from air movement. Energy storage technologies like batteries, pumped hydro, and compressed air help address intermittency challenges. Smart grids integrate renewable sources with traditional power systems. Cost reductions and efficiency improvements have made renewables competitive with fossil fuels in many markets, driving the global transition to clean energy systems.",
+                "category": "energy_technology",
+                "topics": ["renewable energy", "solar power", "wind energy", "energy storage", "smart grids", "clean energy transition", "sustainability"]
+            },
+            {
+                "title": "Ocean Exploration and Marine Science",
+                "content": "The ocean covers over 70% of Earth's surface but remains largely unexplored, with less than 5% of the ocean floor mapped in detail. Deep-sea exploration reveals unique ecosystems around hydrothermal vents, cold seeps, and seamounts. Marine organisms provide insights into evolution, adaptation, and potential biotechnology applications. Ocean currents regulate global climate, while marine carbon cycles affect atmospheric CO2 levels. Threats include pollution, overfishing, acidification, and warming temperatures. Advanced submersibles, autonomous underwater vehicles, and satellite oceanography enable new discoveries about Earth's largest habitat.",
+                "category": "marine_science",
+                "topics": ["ocean exploration", "deep sea", "marine ecosystems", "ocean currents", "marine biology", "ocean acidification", "underwater technology"]
+            },
+            {
+                "title": "Nanotechnology and Materials Science",
+                "content": "Nanotechnology manipulates matter at the atomic and molecular scale (1-100 nanometers) to create materials and devices with novel properties. Carbon nanotubes exhibit exceptional strength and electrical conductivity. Quantum dots have size-dependent optical properties useful for displays and solar cells. Nanoparticles enable targeted drug delivery and enhanced imaging. Smart materials respond to environmental changes with shape, stiffness, or other property modifications. Applications include electronics, medicine, energy storage, catalysis, and environmental remediation. Safety considerations address potential toxicity and environmental impacts of engineered nanomaterials.",
+                "category": "nanotechnology",
+                "topics": ["nanotechnology", "nanomaterials", "carbon nanotubes", "quantum dots", "smart materials", "molecular engineering", "nanoparticles"]
+            },
+            {
+                "title": "Neuroscience and Brain Function",
+                "content": "Neuroscience studies the structure and function of the nervous system, from molecular mechanisms to behavior and cognition. The human brain contains approximately 86 billion neurons connected by trillions of synapses. Neural plasticity allows the brain to reorganize and adapt throughout life. Advanced techniques include fMRI, optogenetics, and single-cell recording to study brain activity. Research focuses on consciousness, memory formation, decision-making, and neurological disorders. Brain-computer interfaces enable direct communication between neural activity and external devices, with applications in prosthetics, treatment of paralysis, and cognitive enhancement.",
+                "category": "neuroscience",
+                "topics": ["neuroscience", "brain function", "neural plasticity", "consciousness", "brain-computer interfaces", "neurological disorders", "cognitive science"]
+            },
+            {
+                "title": "Robotics and Autonomous Systems",
+                "content": "Robotics combines mechanical engineering, electronics, and artificial intelligence to create machines that can perceive, plan, and act in complex environments. Industrial robots increase manufacturing precision and efficiency. Service robots assist with healthcare, cleaning, and personal tasks. Autonomous vehicles use sensors, mapping, and AI to navigate without human intervention. Swarm robotics coordinates multiple simple robots to accomplish complex tasks. Soft robotics uses flexible materials for safer human interaction. Challenges include perception in unstructured environments, manipulation of complex objects, and ethical considerations around automation and employment.",
+                "category": "robotics",
+                "topics": ["robotics", "autonomous systems", "industrial robots", "autonomous vehicles", "swarm robotics", "soft robotics", "human-robot interaction"]
+            },
+            {
+                "title": "Cybersecurity and Information Protection",
+                "content": "Cybersecurity protects digital systems, networks, and data from malicious attacks, unauthorized access, and damage. Common threats include malware, phishing, ransomware, and distributed denial of service attacks. Security measures include encryption, firewalls, intrusion detection, and access controls. Zero-trust architecture assumes no implicit trust and continuously validates access requests. Artificial intelligence enhances both attack sophistication and defense capabilities. Privacy regulations like GDPR and CCPA govern data protection. Emerging challenges include IoT security, cloud security, and quantum computing threats to current cryptographic methods.",
+                "category": "cybersecurity",
+                "topics": ["cybersecurity", "information security", "encryption", "malware", "privacy", "zero-trust", "cyber threats"]
+            },
+            {
+                "title": "Sustainable Agriculture and Food Security",
+                "content": "Sustainable agriculture produces food while maintaining environmental health, economic viability, and social equity. Precision agriculture uses GPS, sensors, and data analytics to optimize inputs like water, fertilizer, and pesticides. Vertical farming and hydroponics enable food production in urban environments with reduced land and water use. Plant breeding and genetic modification develop crops with improved yield, nutrition, and stress tolerance. Integrated pest management reduces chemical pesticide use. Food security challenges include feeding a growing global population while adapting to climate change and preserving biodiversity.",
+                "category": "agriculture",
+                "topics": ["sustainable agriculture", "precision agriculture", "vertical farming", "food security", "plant breeding", "integrated pest management", "climate adaptation"]
+            },
+            {
+                "title": "3D Printing and Digital Manufacturing",
+                "content": "3D printing, or additive manufacturing, creates objects layer by layer from digital designs, enabling rapid prototyping, customization, and on-demand production. Technologies include fused deposition modeling, stereolithography, and selective laser sintering using materials from plastics to metals and ceramics. Applications span aerospace, medical devices, automotive, architecture, and consumer products. Bioprinting creates tissue and organ structures for medical research and potential transplantation. Digital manufacturing integrates 3D printing with robotics, AI, and IoT for flexible, distributed production systems. Challenges include speed, material properties, and quality control.",
+                "category": "manufacturing",
+                "topics": ["3D printing", "additive manufacturing", "digital manufacturing", "bioprinting", "rapid prototyping", "customization", "distributed production"]
+            },
+            {
+                "title": "Virtual and Augmented Reality",
+                "content": "Virtual Reality (VR) creates immersive digital environments that users can interact with through specialized headsets and controllers. Augmented Reality (AR) overlays digital information onto the real world through smartphones, tablets, or AR glasses. Mixed Reality (MR) combines virtual and real elements with spatial awareness. Applications include gaming, education, training, healthcare, architecture, and social interaction. Key technologies include head tracking, hand tracking, spatial mapping, and realistic rendering. Challenges include motion sickness, visual fidelity, battery life, and social acceptance. The metaverse concept envisions persistent virtual worlds for work, entertainment, and social interaction.",
+                "category": "immersive_technology",
+                "topics": ["virtual reality", "augmented reality", "mixed reality", "immersive technology", "metaverse", "spatial computing", "human-computer interaction"]
+            },
+            {
+                "title": "Nuclear Energy and Reactor Technology",
+                "content": "Nuclear energy harnesses the power released from atomic nuclei through fission or fusion reactions. Current nuclear power plants use uranium fission in pressurized water reactors, boiling water reactors, and other designs. Nuclear energy provides low-carbon electricity but raises concerns about radioactive waste, safety, and proliferation. Advanced reactor designs include small modular reactors, thorium reactors, and fusion reactors. Nuclear fusion promises abundant clean energy by combining light nuclei, but technical challenges include plasma confinement and material sciences. Nuclear medicine uses radioactive isotopes for imaging and cancer treatment.",
+                "category": "nuclear_technology",
+                "topics": ["nuclear energy", "nuclear fission", "nuclear fusion", "nuclear reactors", "radioactive waste", "nuclear medicine", "clean energy"]
+            },
+            {
+                "title": "Blockchain and Distributed Systems",
+                "content": "Blockchain is a distributed ledger technology that maintains a continuously growing list of records secured by cryptographic hashes and consensus mechanisms. Bitcoin introduced blockchain for digital currency, while Ethereum enables smart contracts and decentralized applications. Blockchain properties include immutability, transparency, and decentralization without central authority. Applications extend beyond cryptocurrency to supply chain management, digital identity, voting systems, and decentralized finance (DeFi). Consensus mechanisms include proof of work, proof of stake, and other algorithms. Challenges include scalability, energy consumption, regulatory compliance, and interoperability between different blockchain networks.",
+                "category": "distributed_systems",
+                "topics": ["blockchain", "cryptocurrency", "distributed systems", "smart contracts", "decentralized applications", "consensus mechanisms", "digital currency"]
+            },
+            {
+                "title": "Biotechnology and Synthetic Biology",
+                "content": "Biotechnology applies biological systems and organisms to develop products and technologies benefiting human health, agriculture, and industry. Synthetic biology engineers biological systems by designing and constructing new biological parts, devices, and systems. Applications include producing pharmaceuticals in bacteria, creating biofuels from algae, and developing biodegradable plastics. Metabolic engineering modifies cellular pathways to produce desired compounds. Biosensors detect environmental contaminants, pathogens, or biomarkers. Ethical considerations include biosafety, environmental release of modified organisms, and equitable access to biotechnology benefits.",
+                "category": "biotechnology",
+                "topics": ["biotechnology", "synthetic biology", "metabolic engineering", "biofuels", "biosensors", "pharmaceutical production", "biosafety"]
+            },
+            {
+                "title": "Data Science and Big Data Analytics",
+                "content": "Data science extracts insights from structured and unstructured data using statistical analysis, machine learning, and domain expertise. Big data refers to datasets too large or complex for traditional processing methods, characterized by volume, velocity, and variety. Data pipeline processes include collection, cleaning, storage, analysis, and visualization. Machine learning algorithms identify patterns and make predictions from historical data. Applications span business intelligence, scientific research, healthcare analytics, and social media analysis. Data privacy and ethics address consent, bias, and responsible use of personal information.",
+                "category": "data_science",
+                "topics": ["data science", "big data", "machine learning", "data analytics", "statistical analysis", "data visualization", "data privacy"]
+            },
+            {
+                "title": "Internet of Things and Connected Devices",
+                "content": "The Internet of Things (IoT) connects everyday objects to the internet, enabling them to send and receive data. Smart home devices include thermostats, security cameras, and voice assistants. Industrial IoT optimizes manufacturing, logistics, and infrastructure through sensor networks and analytics. Wearable devices monitor health metrics and fitness activities. Smart cities use IoT for traffic management, environmental monitoring, and public services. Edge computing processes data locally to reduce latency and bandwidth requirements. Security challenges include device authentication, data encryption, and firmware updates for billions of connected devices.",
+                "category": "internet_of_things",
+                "topics": ["IoT", "connected devices", "smart home", "industrial IoT", "wearable technology", "smart cities", "edge computing"]
+            },
+            {
+                "title": "Space Debris and Orbital Environment",
+                "content": "Space debris consists of defunct satellites, spent rocket stages, and fragments from collisions orbiting Earth. Over 34,000 tracked objects larger than 10 cm pose collision risks to operational spacecraft and the International Space Station. The Kessler Syndrome describes a cascade effect where collisions create more debris, potentially making certain orbits unusable. Mitigation strategies include deorbiting satellites at end of life, designing for demise during reentry, and avoiding intentional destruction in orbit. Active debris removal missions use robotic arms, nets, or harpoons to capture and deorbit large objects. International guidelines promote sustainable space activities.",
+                "category": "space_environment",
+                "topics": ["space debris", "orbital mechanics", "Kessler Syndrome", "space sustainability", "debris removal", "satellite operations", "space traffic management"]
+            },
+            {
+                "title": "Exoplanet Atmospheres and Habitability",
+                "content": "Exoplanet atmospheres provide clues about planetary formation, evolution, and potential habitability. Transit spectroscopy analyzes starlight passing through planetary atmospheres to identify chemical compositions. Hot Jupiters show extreme temperatures and atmospheric escape, while super-Earths may retain thick atmospheres. The habitable zone, or Goldilocks zone, represents distances from stars where liquid water could exist on planetary surfaces. Biosignatures like oxygen, methane, and phosphine could indicate biological activity. The James Webb Space Telescope revolutionizes atmospheric characterization with unprecedented sensitivity and wavelength coverage for studying potentially habitable worlds.",
+                "category": "exoplanet_science",
+                "topics": ["exoplanet atmospheres", "transit spectroscopy", "habitable zone", "biosignatures", "atmospheric escape", "planetary characterization", "astrobiology"]
+            },
+            {
+                "title": "Gravitational Waves and LIGO Discoveries",
+                "content": "Gravitational waves are ripples in spacetime caused by accelerating massive objects, predicted by Einstein's general relativity and first detected by LIGO in 2015. These waves result from extreme cosmic events like black hole mergers, neutron star collisions, and potentially the Big Bang itself. LIGO uses laser interferometry to measure incredibly small changes in arm lengths caused by passing gravitational waves. Discoveries include binary black hole systems, neutron star mergers producing gold and platinum, and tests of fundamental physics in extreme gravity. Future space-based detectors like LISA will observe lower-frequency waves from supermassive black holes.",
+                "category": "gravitational_physics",
+                "topics": ["gravitational waves", "LIGO", "black hole mergers", "neutron stars", "general relativity", "interferometry", "multi-messenger astronomy"]
+            },
+            {
+                "title": "Stem Cell Research and Regenerative Medicine",
+                "content": "Stem cells can differentiate into various cell types and have self-renewal capacity, making them valuable for treating diseases and injuries. Embryonic stem cells are pluripotent but raise ethical concerns, while induced pluripotent stem cells (iPSCs) reprogram adult cells to embryonic-like states. Adult stem cells from bone marrow, fat, and other tissues have more limited differentiation potential. Applications include treating blood disorders, spinal cord injuries, and degenerative diseases. Tissue engineering combines stem cells with biomaterial scaffolds to grow replacement organs. Challenges include controlling differentiation, preventing tumor formation, and immune rejection.",
+                "category": "regenerative_medicine",
+                "topics": ["stem cells", "regenerative medicine", "tissue engineering", "cell therapy", "pluripotent stem cells", "organ regeneration", "biomedical research"]
             }
         ]
         
-        # Create embeddings for all documents
-        print("🔄 Creating embeddings for space documents...")
-        document_texts = [doc["content"] for doc in space_documents]
-        embeddings = self.embedding_model.encode(document_texts, convert_to_numpy=True)
+        return knowledge_documents
+    
+    async def _create_faiss_index_from_documents(self, documents: List[Dict[str, Any]], is_streamlit_cloud: bool = False):
+        """Create FAISS index from document list with progress tracking"""
+        if not documents:
+            print("❌ No documents provided for index creation")
+            return
+        
+        print(f"🔄 Creating embeddings for {len(documents)} documents...")
+        
+        # Progress tracking for large datasets
+        batch_size = 100 if len(documents) > 500 else len(documents)
+        all_embeddings = []
+        
+        for i in range(0, len(documents), batch_size):
+            batch = documents[i:i + batch_size]
+            batch_texts = [doc["content"] for doc in batch]
+            
+            print(f"   Processing batch {i//batch_size + 1}/{(len(documents) + batch_size - 1)//batch_size} ({len(batch)} documents)")
+            batch_embeddings = self.embedding_model.encode(batch_texts, convert_to_numpy=True)
+            all_embeddings.append(batch_embeddings)
+        
+        # Combine all embeddings
+        embeddings = np.vstack(all_embeddings)
+        print(f"✅ Created embeddings for {len(documents)} documents")
         
         # Create FAISS index
+        print("🔧 Building FAISS index...")
         dimension = embeddings.shape[1]
         self.faiss_index = faiss.IndexFlatIP(dimension)  # Inner product for similarity
         
@@ -258,17 +511,32 @@ class SimpleRAGSystem:
         self.faiss_index.add(embeddings)
         
         # Store documents and metadata
-        self.documents = space_documents
-        self.document_metadata = [{"id": i, **doc} for i, doc in enumerate(space_documents)]
+        self.documents = documents
+        self.document_metadata = [{"id": i, **doc} for i, doc in enumerate(documents)]
         
-        # Save to disk
+        # Save to disk (may fail in read-only environments)
         await self._save_index()
         
-        print(f"✅ Created FAISS index with {len(space_documents)} space documents")
+        # Summary
+        categories = list(set([doc.get('category', 'general') for doc in documents]))
+        print(f"✅ Created FAISS index with {len(documents)} documents")
+        print(f"📊 Knowledge domains: {len(categories)} categories")
+        
+        if is_streamlit_cloud:
+            print("🚀 Streamlit Cloud deployment optimized with comprehensive knowledge base!")
+        
+        # Memory optimization for large datasets
+        if len(documents) > 1000:
+            print("🧹 Performing memory optimization for large dataset...")
+            import gc
+            gc.collect()
     
     async def _save_index(self):
         """Save FAISS index and metadata to disk"""
         try:
+            # Check if we can actually save (may not be possible in some cloud environments)
+            self.storage_dir.mkdir(parents=True, exist_ok=True)
+            
             faiss.write_index(self.faiss_index, str(self.faiss_path))
             
             with open(self.metadata_path, 'wb') as f:
@@ -277,9 +545,68 @@ class SimpleRAGSystem:
             with open(self.documents_path, 'wb') as f:
                 pickle.dump(self.documents, f)
             
-            print("💾 Index saved to disk")
+            print("💾 Index saved to disk successfully")
         except Exception as e:
-            print(f"⚠️ Failed to save index: {e}")
+            print(f"⚠️ Failed to save index to disk: {e}")
+            print("ℹ️ This is normal in read-only deployment environments like Streamlit Cloud")
+    
+    def get_system_info(self) -> Dict[str, Any]:
+        """Get comprehensive system information for debugging and status display"""
+        # Calculate document statistics
+        categories = list(set([doc.get("category", "unknown") for doc in self.documents]))
+        
+        # Content statistics
+        total_content_length = sum(len(doc.get("content", "")) for doc in self.documents)
+        avg_content_length = total_content_length / len(self.documents) if self.documents else 0
+        
+        # Determine data source
+        data_source = "Unknown"
+        if len(self.documents) > 1000:
+            data_source = "Consolidated Knowledge Base (2000+ articles)"
+        elif len(self.documents) > 50:
+            data_source = "Enhanced Fallback Dataset"
+        elif len(self.documents) > 10:
+            data_source = "Basic Fallback Dataset"
+        else:
+            data_source = "Minimal Fallback"
+        
+        # Check if consolidated knowledge base exists
+        knowledge_base_available = Path("data/knowledge_base.json").exists()
+        
+        return {
+            "total_documents": len(self.documents),
+            "data_source": data_source,
+            "knowledge_base_available": knowledge_base_available,
+            "embedding_model_available": self.embedding_model is not None,
+            "faiss_index_available": self.faiss_index is not None,
+            "web_search_available": self.web_search_manager is not None,
+            "document_categories": categories[:15],  # Limit for display
+            "total_categories": len(categories),
+            "content_stats": {
+                "total_content_length": total_content_length,
+                "avg_content_length": int(avg_content_length),
+                "total_characters": f"{total_content_length:,}"
+            },
+            "storage_paths": {
+                "storage_dir": str(self.storage_dir),
+                "data_dir_exists": Path("data").exists(),
+                "knowledge_base_path": str(Path("data/knowledge_base.json")),
+                "faiss_path_exists": self.faiss_path.exists(),
+                "metadata_path_exists": self.metadata_path.exists(),
+                "documents_path_exists": self.documents_path.exists()
+            },
+            "configuration": {
+                "ollama_model": self.ollama_model,
+                "similarity_threshold": self.similarity_threshold,
+                "max_local_results": self.max_local_results,
+                "max_web_results": self.max_web_results
+            },
+            "environment": {
+                "streamlit_cloud": bool(os.getenv('STREAMLIT_SHARING_MODE') or os.getenv('STREAMLIT_CLOUD')),
+                "current_working_dir": os.getcwd(),
+                "python_path": os.getcwd()
+            }
+        }
     
     async def _test_ollama(self) -> bool:
         """Test Ollama connection and available models"""

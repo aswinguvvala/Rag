@@ -814,29 +814,81 @@ st.markdown(cosmic_title_html, unsafe_allow_html=True)
 
 # --- System Status Indicator ---
 def show_system_status():
-    """Show system status in a compact way"""
+    """Show enhanced system status with detailed information"""
     try:
         status_items = []
+        details = []
         
         # Check embedding model
         if hasattr(rag_system, 'embedding_model') and rag_system.embedding_model:
-            status_items.append("🧠 Local Knowledge")
+            status_items.append("🧠 AI Embeddings")
         
         # Check web search
         if hasattr(rag_system, 'web_search_manager') and rag_system.web_search_manager:
             status_items.append("🌐 Web Search")
         
-        # Check documents
+        # Check documents with detailed info
         if hasattr(rag_system, 'documents') and rag_system.documents:
-            status_items.append(f"📚 {len(rag_system.documents)} Documents")
+            doc_count = len(rag_system.documents)
+            status_items.append(f"📚 {doc_count} Documents")
+            
+            # Get detailed system information
+            if hasattr(rag_system, 'get_system_info'):
+                try:
+                    system_info = rag_system.get_system_info()
+                    
+                    # Show data source information
+                    data_source = system_info.get('data_source', 'Unknown')
+                    details.append(f"🗃️ Data Source: {data_source}")
+                    
+                    # Show categories if we have substantial content
+                    categories = system_info.get('document_categories', [])
+                    total_categories = system_info.get('total_categories', 0)
+                    
+                    if categories and doc_count > 10:
+                        # Show top categories
+                        category_display = ', '.join(categories[:4])
+                        if total_categories > 4:
+                            category_display += f" (+{total_categories-4} more)"
+                        details.append(f"📊 Knowledge Domains: {category_display}")
+                        
+                        # Show content statistics for large datasets
+                        if doc_count > 100:
+                            content_stats = system_info.get('content_stats', {})
+                            total_chars = content_stats.get('total_characters', 'N/A')
+                            avg_length = content_stats.get('avg_content_length', 0)
+                            details.append(f"📈 Content: {total_chars} chars, avg {avg_length} per article")
+                    
+                    # Show environment info
+                    env_info = system_info.get('environment', {})
+                    if env_info.get('streamlit_cloud'):
+                        if doc_count > 1000:
+                            details.append("🌐 Streamlit Cloud with Consolidated Knowledge Base")
+                        else:
+                            details.append("🌐 Streamlit Cloud with Enhanced Fallback Dataset")
+                    else:
+                        details.append("💻 Local Environment with Full Knowledge Base")
+                        
+                    # Show knowledge base availability
+                    if system_info.get('knowledge_base_available'):
+                        details.append("✅ Consolidated knowledge base loaded successfully")
+                    
+                except Exception as e:
+                    details.append(f"⚠️ System info error: {str(e)[:50]}...")
         
         if status_items:
             status_text = " | ".join(status_items)
-            st.markdown(f"<div style='text-align: center; color: #4a90e2; font-size: 14px; margin-bottom: 20px;'>✅ Active: {status_text}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align: center; color: #4a90e2; font-size: 14px; margin-bottom: 10px;'>✅ Active: {status_text}</div>", unsafe_allow_html=True)
+            
+            # Show additional details if available
+            if details:
+                details_text = "<br>".join(details)
+                st.markdown(f"<div style='text-align: center; color: #7a7a7a; font-size: 12px; margin-bottom: 20px;'>{details_text}</div>", unsafe_allow_html=True)
         else:
             st.markdown("<div style='text-align: center; color: #ff6b6b; font-size: 14px; margin-bottom: 20px;'>⚠️ Limited functionality - some services unavailable</div>", unsafe_allow_html=True)
-    except Exception:
-        pass  # Don't show anything if status check fails
+    except Exception as e:
+        # Show minimal fallback info
+        st.markdown(f"<div style='text-align: center; color: #7a7a7a; font-size: 12px; margin-bottom: 20px;'>ℹ️ System initializing...</div>", unsafe_allow_html=True)
 
 show_system_status()
 
