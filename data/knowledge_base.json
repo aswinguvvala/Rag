@@ -1,201 +1,207 @@
 {
   "metadata": {
-    "total_articles": 2207,
+    "total_articles": 2248,
     "sources": [
       "storage/scraped_articles.json",
+      "Space.com",
+      "NASA",
+      "Curated Space Knowledge",
       "storage/test_space_articles.json"
     ],
     "categories": [
-      "astro-ph.GA",
-      "engineering",
-      "Kepler-452b",
-      "JAXA",
-      "mathematics",
-      "planetarium",
-      "Mars_exploration",
-      "Fermi_paradox",
-      "astro-ph.EP",
-      "Neil_Armstrong",
-      "James_Webb_Space_Telescope",
-      "Venus",
-      "Titan",
-      "space_settlement",
-      "Falcon_9",
-      "cosmology",
-      "gr-qc",
-      "radio_astronomy",
-      "Boeing_Starliner",
-      "Apollo_11",
-      "Chandra_X-ray_Observatory",
-      "launch_vehicle",
-      "Kuiper_belt",
-      "ISRO",
+      "Earth",
+      "astrochemistry",
+      "space_facts",
+      "gravity_assist",
       "Big_Bang",
-      "moon",
-      "quasar",
-      "space_elevator",
-      "Jet_Propulsion_Laboratory",
-      "meteorite",
-      "nebula",
-      "OSIRIS-REx",
-      "Luna_program",
-      "dwarf_planet",
-      "orbital_mechanics",
-      "terraforming",
       "Starship",
-      "space_shuttle",
-      "space_tether",
-      "New_Shepard",
-      "Pluto",
-      "heat_shield",
-      "Life Sciences",
-      "Drake_equation",
-      "space_weather",
-      "cosmic_microwave_background",
-      "New_Horizons",
-      "exoplanet",
+      "Aeronautics",
       "Space_Shuttle_program",
-      "supernova",
+      "Mars_exploration",
+      "Perseverance_rover",
+      "space_news",
+      "general_relativity",
+      "space_physics",
+      "space_station",
+      "Kepler-452b",
+      "stellar_evolution",
+      "space_manufacturing",
+      "Cassini–Huygens",
+      "Hubble_Space_Telescope",
+      "launch_vehicle",
+      "Sputnik_1",
+      "Virgin_Orbit",
+      "Neil_Armstrong",
+      "physics",
+      "Venus",
+      "Skylab",
+      "Van_Allen_radiation_belt",
+      "dwarf_planet",
+      "Blue_Origin",
+      "CubeSat",
+      "Planetary Science",
+      "European_Space_Agency",
+      "radio_astronomy",
+      "life_support_system",
+      "habitable_zone",
+      "cosmic_microwave_background",
+      "Enceladus",
+      "white_dwarf",
+      "astronomy",
+      "InSight",
+      "materials_science",
+      "Mercury",
+      "space_weather",
+      "Parker_Solar_Probe",
+      "engineering",
       "Human Exploration",
+      "Io",
+      "Curiosity_rover",
+      "astro-ph.GA",
+      "black_hole",
+      "space_law",
+      "Oort_cloud",
+      "Spitzer_Space_Telescope",
+      "Drake_equation",
+      "TRAPPIST-1",
+      "Voyager_program",
+      "Ganymede",
+      "space_settlement",
+      "JAXA",
+      "astro-ph.EP",
+      "quantum_mechanics",
+      "physics.ao-ph",
+      "OneWeb",
+      "Apollo_program",
+      "spacecraft",
+      "cosmology",
+      "supernova",
+      "planetary_protection",
+      "NASA",
+      "quasar",
+      "Titan",
+      "Boeing_Starliner",
+      "rocket",
+      "Pluto",
+      "Space Operations",
+      "astrobiology",
+      "gr-qc",
+      "planetarium",
+      "satellite",
+      "Space News",
+      "astro-ph.HE",
+      "red_giant",
+      "Chandra_X-ray_Observatory",
+      "terraforming",
+      "planetary_geology",
+      "Space Technology",
+      "Space_Race",
+      "ISRO",
+      "Mir",
+      "Moon_landing",
+      "comet",
+      "SpaceX_Dragon",
+      "Apollo_11",
+      "satellite_constellation",
+      "astro-ph.IM",
+      "pulsar",
+      "solar_wind",
+      "astro-ph.CO",
+      "Rocket_Lab",
+      "Saturn",
+      "NewSpace",
+      "Yuri_Gagarin",
+      "in-situ_resource_utilization",
+      "physics.space-ph",
+      "space_colonization",
+      "Astrophysics",
+      "space_tourism",
+      "citizen_science",
+      "amateur_astronomy",
       "exobiology",
+      "Project_Kuiper",
+      "BepiColombo",
+      "Life Sciences",
+      "New_Horizons",
+      "physics.plasm-ph",
+      "Fermi_paradox",
+      "Kennedy_Space_Center",
+      "space_elevator",
+      "neutron_star",
+      "space_policy",
+      "astro-ph.SR",
+      "magnetosphere",
+      "observatory",
+      "moon",
+      "Jet_Propulsion_Laboratory",
+      "impact_crater",
+      "hep-th",
+      "Kepler_space_telescope",
+      "cosmic_inflation",
+      "Kuiper_belt",
+      "satellite_internet",
+      "Europa",
+      "James_Webb_Space_Telescope",
+      "planetary_science",
+      "Artemis_program",
+      "asteroid",
+      "Starlink",
+      "commercial_crew",
+      "EVA",
+      "string_theory",
+      "astrophysics",
+      "Johnson_Space_Center",
+      "rocket_engine",
+      "Jupiter",
+      "history_of_spaceflight",
+      "nuclear_propulsion",
+      "space_tether",
+      "trajectory",
+      "astrogeology",
+      "International_Space_Station",
+      "thermodynamics",
+      "dark_energy",
+      "solar_sail",
+      "dark_matter",
+      "nebula",
+      "Virgin_Galactic",
+      "Solar_System",
+      "space_shuttle",
+      "galaxy",
+      "Earth Science",
+      "space_ethics",
+      "multiverse",
+      "mathematics",
+      "exoplanet",
+      "Falcon_9",
+      "ULA",
+      "Stanford_torus",
+      "Outer_Space_Treaty",
+      "Luna_program",
+      "Falcon_Heavy",
+      "heat_shield",
       "Challenger_disaster",
       "SETI",
-      "ULA",
-      "EVA",
-      "physics",
-      "planetary_science",
-      "planetary_protection",
-      "Space Operations",
-      "BepiColombo",
-      "rocket_engine",
-      "neutron_star",
-      "physics.ao-ph",
-      "dark_energy",
-      "comet",
-      "Mars",
-      "Io",
-      "cosmic_inflation",
-      "Perseverance_rover",
-      "astrogeology",
-      "Enceladus",
-      "Van_Allen_radiation_belt",
-      "space_tourism",
-      "Yuri_Gagarin",
-      "Voyager_program",
-      "magnetosphere",
-      "quantum_mechanics",
-      "stellar_evolution",
-      "space_policy",
-      "galaxy",
-      "Kennedy_Space_Center",
-      "physics.plasm-ph",
-      "Virgin_Orbit",
-      "European_Space_Agency",
-      "computer_science",
-      "satellite_internet",
-      "Artemis_program",
-      "New_Glenn",
-      "space_law",
-      "Cassini–Huygens",
-      "habitable_zone",
-      "asteroid",
-      "Hubble_Space_Telescope",
-      "rocket",
-      "TRAPPIST-1",
-      "Space News",
+      "New_Shepard",
       "Callisto",
-      "CubeSat",
-      "Earth Science",
-      "Skylab",
-      "trajectory",
-      "dark_matter",
-      "citizen_science",
-      "Ganymede",
-      "Parker_Solar_Probe",
-      "Oort_cloud",
-      "string_theory",
-      "satellite_constellation",
+      "New_Glenn",
       "Mars_rover",
-      "Planetary Science",
-      "Aeronautics",
-      "gravity_assist",
-      "Mercury",
-      "NewSpace",
-      "history_of_spaceflight",
-      "space_ethics",
-      "space_colonization",
-      "black_hole",
-      "astro-ph.HE",
-      "Earth",
-      "Astrophysics",
-      "Kepler_space_telescope",
-      "solar_sail",
-      "planetary_geology",
-      "life_support_system",
-      "Outer_Space_Treaty",
-      "Blue_Origin",
-      "satellite",
-      "International_Space_Station",
-      "white_dwarf",
-      "Roscosmos",
-      "OneWeb",
-      "asteroid_belt",
-      "space_manufacturing",
-      "astrochemistry",
-      "Jupiter",
-      "SpaceX_Dragon",
-      "spacecraft",
-      "amateur_astronomy",
-      "SpaceX",
-      "Moon_landing",
-      "physics.space-ph",
-      "Spitzer_Space_Telescope",
-      "multiverse",
-      "Solar_System",
-      "astrophysics",
-      "InSight",
-      "Starlink",
-      "Curiosity_rover",
-      "impact_crater",
-      "space_suit",
-      "nuclear_propulsion",
-      "materials_science",
-      "red_giant",
-      "O'Neill_cylinder",
-      "Neptune",
-      "solar_wind",
-      "space_physics",
-      "Mir",
-      "Europa",
-      "hep-th",
-      "Rocket_Lab",
-      "Apollo_program",
-      "Project_Kuiper",
-      "Saturn",
-      "astrobiology",
-      "astronomy",
-      "observatory",
-      "Space Technology",
-      "Johnson_Space_Center",
       "Uranus",
-      "Virgin_Galactic",
-      "space_station",
-      "Space_Race",
-      "Falcon_Heavy",
-      "in-situ_resource_utilization",
-      "NASA",
-      "commercial_crew",
-      "pulsar",
-      "astro-ph.CO",
-      "astro-ph.SR",
-      "Stanford_torus",
-      "astro-ph.IM",
-      "general_relativity",
-      "thermodynamics",
-      "Sputnik_1"
+      "OSIRIS-REx",
+      "meteorite",
+      "computer_science",
+      "SpaceX",
+      "Roscosmos",
+      "nasa_news",
+      "orbital_mechanics",
+      "Neptune",
+      "Mars",
+      "O'Neill_cylinder",
+      "asteroid_belt",
+      "space_suit"
     ],
-    "consolidation_date": "2025-01-29",
-    "description": "Consolidated knowledge base from scraped articles and space content"
+    "last_updated": 1753989121.232415,
+    "scraped_content_added": 41
   },
   "articles": [
     {
@@ -28621,6 +28627,498 @@
         "space_exploration"
       ],
       "content_hash": "9bc36b78a174d3dd0d45dbd92e8eafcd"
+    },
+    {
+      "title": "NASA Installs Key ‘Sunblock’ Shield on Roman Space Telescope",
+      "content": "Technicians have successfully installed two sunshields onto NASA’s Nancy Grace Roman Space Telescope’s inner segment. Along with the observatory’s Solar Array Sun Shield and Deployable Aperture Cover, the panels (together called the Lower Instrument Sun Shade), will play a critical role in keeping Roman’s instruments cool and stable as the mission explores the infrared universe. [&#8230;]",
+      "category": "nasa_news",
+      "topics": [
+        "nasa",
+        "space",
+        "exploration"
+      ],
+      "source": "NASA - https://www.nasa.gov/missions/roman-space-telescope/nasa-installs-key-sunblock-shield-on-roman-space-telescope/",
+      "scraped_at": 1753989121.232341
+    },
+    {
+      "title": "NASA Invites Proposals to Lease Aircraft Hangar in Cleveland",
+      "content": "NASA’s Glenn Research Center in Cleveland is seeking proposals for the use of its historic aircraft hangar, along with a parking lot, tarmac, and a small neighboring office building.&#160;Proposals are due by 1 p.m. EDT on Nov. 28. &#160; The hangar, formally known as the Flight Research Building, is available for lease by signing a [&#8230;]",
+      "category": "nasa_news",
+      "topics": [
+        "nasa",
+        "space",
+        "exploration"
+      ],
+      "source": "NASA - https://www.nasa.gov/news-release/lease-nasa-aircraft-hangar-in-cleveland/",
+      "scraped_at": 1753989121.232349
+    },
+    {
+      "title": "NASA Releases Opportunity to Boost Commercial Space Tech Development",
+      "content": "NASA has released a new proposal opportunity for industry to tap into agency know-how, resources, and expertise. The Announcement of Collaboration Opportunity (ACO), managed by the Space Technology Mission Directorate, enables valuable collaboration without financial exchanges between NASA and industry partners. Instead, companies leverage NASA subject matter experts, facilities, software, and hardware to accelerate their [&#8230;]",
+      "category": "nasa_news",
+      "topics": [
+        "nasa",
+        "space",
+        "exploration"
+      ],
+      "source": "NASA - https://www.nasa.gov/directorates/stmd/nasa-releases-opportunity-to-boost-commercial-space-tech-development/",
+      "scraped_at": 1753989121.232351
+    },
+    {
+      "title": "NASA Tests Epic Solution for Supersonic Parachute Deliveries",
+      "content": "NASA/Lori Losey The best way to solve a mystery is by gathering evidence and building a case. That’s exactly what NASA researchers are doing with a series of research flights aimed at advancing a sensor for supersonic parachutes. The clues they find could help make these parachutes more reliable and safer for delivering scientific instruments [&#8230;]",
+      "category": "nasa_news",
+      "topics": [
+        "nasa",
+        "space",
+        "exploration"
+      ],
+      "source": "NASA - https://www.nasa.gov/image-article/nasa-tests-epic-solution-for-supersonic-parachute-deliveries/",
+      "scraped_at": 1753989121.232351
+    },
+    {
+      "title": "NASA-ISRO Satellite Lifts Off to Track Earth’s Changing Surfaces",
+      "content": "Editor&#8217;s Note: This release was edited on July 30, 2025, to correct the mission launch time in the IST time zone. Carrying an advanced radar system that will produce a dynamic, three-dimensional view of Earth in unprecedented detail, the NISAR (NASA-ISRO Synthetic Aperture Radar) satellite has launched from Satish Dhawan Space Centre in Sriharikota, Andhra [&#8230;]",
+      "category": "nasa_news",
+      "topics": [
+        "nasa",
+        "space",
+        "exploration"
+      ],
+      "source": "NASA - https://www.nasa.gov/news-release/nasa-isro-satellite-lifts-off-to-track-earths-changing-surfaces/",
+      "scraped_at": 1753989121.232352
+    },
+    {
+      "title": "NASA’s Webb Traces Details of Complex Planetary Nebula",
+      "content": "Since their discovery in the late 1700s, astronomers have learned that planetary nebulae, or the expanding shell of glowing gas expelled by a low-intermediate mass star late in its life, can come in all shapes and sizes. Most planetary nebula present as circular, elliptical, or bi-polar, but some stray from the norm, as seen in […]",
+      "category": "nasa_news",
+      "topics": [
+        "nasa",
+        "space",
+        "exploration"
+      ],
+      "source": "NASA - https://science.nasa.gov/centers-and-facilities/goddard/nasas-webb-traces-details-of-complex-planetary-nebula/",
+      "scraped_at": 1753989121.232353
+    },
+    {
+      "title": "Looking Forward to the Moon",
+      "content": "On May 8, 2022, NASA’s Exploration Ground Systems’ Program Manager Shawn Quinn captured this crop of a full frame image of the Hadley–Apennine region of Earth’s Moon including the Apollo 15 landing site (very near the edge of the shadow of one of the lunar mountains in the area). Building upon the pioneers from the [&#8230;]",
+      "category": "nasa_news",
+      "topics": [
+        "nasa",
+        "space",
+        "exploration"
+      ],
+      "source": "NASA - https://www.nasa.gov/image-article/looking-forward-to-the-moon/",
+      "scraped_at": 1753989121.232353
+    },
+    {
+      "title": "Laine Havens: Melding Science and Storytelling",
+      "content": "Science Communication Intern – Goddard Space Flight Center Laine Havens — now a senior at Cornell University and three-time NASA intern — grew up with a deep curiosity about how the universe works and a family that encouraged her to explore it. Throughout her childhood, Laine was immersed in science and exposed to wonderful science [&#8230;]",
+      "category": "nasa_news",
+      "topics": [
+        "nasa",
+        "space",
+        "exploration"
+      ],
+      "source": "NASA - https://www.nasa.gov/learning-resources/internships/laine-havens-melding-science-and-storytelling/",
+      "scraped_at": 1753989121.2323542
+    },
+    {
+      "title": "Curiosity Blog, Sols 4614-4615: Driving Along the Boxwork",
+      "content": "Written by Conor Hayes, Graduate Student at York University Earth planning date: Monday, July 28, 2025 Today was a pretty straightforward day of planning. Our drive over the weekend completed successfully, and we quickly confirmed that we are parked in a stable position. Thus, we were able to unstow the rover’s arm to poke around […]",
+      "category": "nasa_news",
+      "topics": [
+        "nasa",
+        "space",
+        "exploration"
+      ],
+      "source": "NASA - https://science.nasa.gov/blog/curiosity-blog-sols-4614-4615-driving-along-the-boxwork/",
+      "scraped_at": 1753989121.2323542
+    },
+    {
+      "title": "Spheres in the Sand",
+      "content": "Written by Andrew Shumway, Postdoctoral Researcher at the University of Washington It is not common for a rover to spot nearly perfect spheres in the soil beneath its wheels. Over two decades ago, the Opportunity rover famously discovered spherules made of hematite (nicknamed “blueberries”) near its landing site in Meridiani Planum. More recently, the Perseverance […]",
+      "category": "nasa_news",
+      "topics": [
+        "nasa",
+        "space",
+        "exploration"
+      ],
+      "source": "NASA - https://science.nasa.gov/blog/spheres-in-the-sand/",
+      "scraped_at": 1753989121.232355
+    },
+    {
+      "title": "Night sky for tonight: Visible planets, stars and more in this evening's sky",
+      "content": "When you purchase through links on our site, we may earn an affiliate commission. Here’s how it works. There is so much to see in the night sky tonight, here's what you can look forward to. A good telescope or pair of binoculars will help you see some of the night sky’s fainter objects. However, the unaided eye is enough to learn its stars and constellations, watch the moon, experience meteor showers and see satellites whizz across the night sky.",
+      "category": "space_news",
+      "topics": [
+        "space",
+        "astronomy",
+        "science"
+      ],
+      "source": "Space.com - https://www.space.com/news/live/night-sky-for-tonight-what-to-see",
+      "scraped_at": 1753989121.232361
+    },
+    {
+      "title": "SpaceX Crew-11 mission to the ISS: Live updates",
+      "content": "When you purchase through links on our site, we may earn an affiliate commission. Here’s how it works. SpaceX has been launching astronauts to the International Space Station (ISS) and other other orbital destinations and returning them to Earth for both NASA and private companies since 2020. The company's current astronaut mission, NASA's Crew-11, is scheduled to launch on July 31. Crew-11 consists of NASA astronauts Zena Cardman (flying as commander) and Mike Fincke (serving as pilot) alongsid...",
+      "category": "space_news",
+      "topics": [
+        "space",
+        "astronomy",
+        "science"
+      ],
+      "source": "Space.com - https://www.space.com/news/live/spacex-crew-dragon-mission-updates",
+      "scraped_at": 1753989121.232362
+    },
+    {
+      "title": "News",
+      "content": "By Kenna Hughes-Castleberry published 31 July 25 A possible planet may be carving the disc around the young star By Richard Edwards published 31 July 25",
+      "category": "space_news",
+      "topics": [
+        "space",
+        "astronomy",
+        "science"
+      ],
+      "source": "Space.com - https://www.space.com/news/page/2",
+      "scraped_at": 1753989121.232364
+    },
+    {
+      "title": "News",
+      "content": "By Brett Tingley published 30 July 25 NASA's next moon astronauts underscored the importance of their upcoming Artemis 2 mission despite a turbulent time for the space agency full of budget cuts and workforce reductions. By Josh Dinner published 30 July 25",
+      "category": "space_news",
+      "topics": [
+        "space",
+        "astronomy",
+        "science"
+      ],
+      "source": "Space.com - https://www.space.com/news/page/3",
+      "scraped_at": 1753989121.2323651
+    },
+    {
+      "title": "News",
+      "content": "By Jesse Emspak last updated 30 July 25 Reference Our August full moon guide tells you everything you need to know about the Sturgeon Moon, including where and when to see it. By Robert Lea published 30 July 25",
+      "category": "space_news",
+      "topics": [
+        "space",
+        "astronomy",
+        "science"
+      ],
+      "source": "Space.com - https://www.space.com/news/page/4",
+      "scraped_at": 1753989121.232366
+    },
+    {
+      "title": "News",
+      "content": "By Harry Baker published 29 July 25 A controversial new paper questions whether the interstellar object 3I/ATLAS is a potentially dangerous alien probe, similar to claims made about 'Oumuamua. But experts have called it \"nonsense\". By Jeff Spry last updated 29 July 25",
+      "category": "space_news",
+      "topics": [
+        "space",
+        "astronomy",
+        "science"
+      ],
+      "source": "Space.com - https://www.space.com/news/page/5",
+      "scraped_at": 1753989121.2323682
+    },
+    {
+      "title": "News",
+      "content": "By Robert Z. Pearlman published 28 July 25 Hundreds of people lined up outside of the Smithsonian's National Air and Space Museum Monday (July 28) to see five newly renovated galleries devoted to aviation and space exploration history. By Fran Ruiz published 28 July 25",
+      "category": "space_news",
+      "topics": [
+        "space",
+        "astronomy",
+        "science"
+      ],
+      "source": "Space.com - https://www.space.com/news/page/6",
+      "scraped_at": 1753989121.2323682
+    },
+    {
+      "title": "News",
+      "content": "By Tereza Pultarova published 28 July 25 The US West Coast is the world's worst mega-drying region. By Paul Sutter published 28 July 25",
+      "category": "space_news",
+      "topics": [
+        "space",
+        "astronomy",
+        "science"
+      ],
+      "source": "Space.com - https://www.space.com/news/page/7",
+      "scraped_at": 1753989121.232372
+    },
+    {
+      "title": "News",
+      "content": "By Robert Z. Pearlman published 26 July 25 A SpaceX Falcon 9 rocket carrying 28 Starlink internet broadband satellites launched from the Cape Canaveral Space Force Station in Florida on Saturday, July 26, 2025. By Jeff Spry published 26 July 25",
+      "category": "space_news",
+      "topics": [
+        "space",
+        "astronomy",
+        "science"
+      ],
+      "source": "Space.com - https://www.space.com/news/page/8",
+      "scraped_at": 1753989121.232372
+    },
+    {
+      "title": "News",
+      "content": "By Brett Tingley published 25 July 25 Crew-11 will launch from NASA's Kennedy Space Center in Florida on July 31 atop a Falcon 9 rocket, if all goes to plan. By Josh Dinner published 25 July 25",
+      "category": "space_news",
+      "topics": [
+        "space",
+        "astronomy",
+        "science"
+      ],
+      "source": "Space.com - https://www.space.com/news/page/9",
+      "scraped_at": 1753989121.232373
+    },
+    {
+      "title": "News archive",
+      "content": "When you purchase through links on our site, we may earn an affiliate commission. Here’s how it works. Space is part of Future US Inc, an international media group and leading digital publisher. Visit our corporate site. © Future US, Inc. Full 7th Floor, 130 West 42nd Street, New York, NY 10036.",
+      "category": "space_news",
+      "topics": [
+        "space",
+        "astronomy",
+        "science"
+      ],
+      "source": "Space.com - https://www.space.com/news/archive",
+      "scraped_at": 1753989121.232373
+    },
+    {
+      "title": "Space Fact: A day on Mercury lasts 59 Earth days, but its year...",
+      "content": "A day on Mercury lasts 59 Earth days, but its year is only 88 Earth days.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232376
+    },
+    {
+      "title": "Space Fact: Astronauts can grow up to 2 inches taller in space...",
+      "content": "Astronauts can grow up to 2 inches taller in space due to the lack of gravity compressing their spine.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232377
+    },
+    {
+      "title": "Space Fact: The observable universe contains at least 2 trilli...",
+      "content": "The observable universe contains at least 2 trillion galaxies, each with billions of stars.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232377
+    },
+    {
+      "title": "Space Fact: The coldest place in the universe is the Boomerang...",
+      "content": "The coldest place in the universe is the Boomerang Nebula at -458°F (-272°C).",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232378
+    },
+    {
+      "title": "Space Fact: The International Space Station travels at 17,500 ...",
+      "content": "The International Space Station travels at 17,500 mph and orbits Earth every 90 minutes.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232378
+    },
+    {
+      "title": "Space Fact: Neutron stars are so dense that a teaspoon of neut...",
+      "content": "Neutron stars are so dense that a teaspoon of neutron star material would weigh about 6 billion tons on Earth.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232379
+    },
+    {
+      "title": "Space Fact: Saturn's moon Titan has lakes and rivers of liquid...",
+      "content": "Saturn's moon Titan has lakes and rivers of liquid methane and ethane instead of water.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232379
+    },
+    {
+      "title": "Space Fact: Space is completely silent because sound needs a m...",
+      "content": "Space is completely silent because sound needs a medium to travel through, and there's no air in space.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232379
+    },
+    {
+      "title": "Space Fact: Light from the Sun takes 8 minutes and 20 seconds ...",
+      "content": "Light from the Sun takes 8 minutes and 20 seconds to reach Earth.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232379
+    },
+    {
+      "title": "Space Fact: The Milky Way galaxy is on a collision course with...",
+      "content": "The Milky Way galaxy is on a collision course with the Andromeda galaxy, expected to merge in about 4.5 billion years.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.23238
+    },
+    {
+      "title": "Space Fact: Jupiter's Great Red Spot is a storm that has been ...",
+      "content": "Jupiter's Great Red Spot is a storm that has been raging for at least 350 years and is larger than Earth.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.23238
+    },
+    {
+      "title": "Space Fact: A black hole's gravity is so strong that not even ...",
+      "content": "A black hole's gravity is so strong that not even light can escape once it crosses the event horizon.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.23238
+    },
+    {
+      "title": "Space Fact: The footprints left by Apollo astronauts on the Mo...",
+      "content": "The footprints left by Apollo astronauts on the Moon will last millions of years due to no wind or water erosion.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.2323809
+    },
+    {
+      "title": "Space Fact: The Hubble Space Telescope has traveled more than ...",
+      "content": "The Hubble Space Telescope has traveled more than 4 billion miles in its orbit around Earth.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.2323809
+    },
+    {
+      "title": "Space Fact: Galaxies are moving away from us due to the expans...",
+      "content": "Galaxies are moving away from us due to the expansion of the universe, discovered by Edwin Hubble in 1929.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.2323809
+    },
+    {
+      "title": "Space Fact: Mars has the largest volcano in the solar system -...",
+      "content": "Mars has the largest volcano in the solar system - Olympus Mons is 13.6 miles high, nearly three times taller than Mount Everest.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232382
+    },
+    {
+      "title": "Space Fact: One day on Venus is longer than its year - Venus r...",
+      "content": "One day on Venus is longer than its year - Venus rotates so slowly that a day lasts 243 Earth days, while its year is only 225 Earth days.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232382
+    },
+    {
+      "title": "Space Fact: The Sun contains 99.86% of the mass in our solar s...",
+      "content": "The Sun contains 99.86% of the mass in our solar system, with Jupiter containing most of the remainder.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232382
+    },
+    {
+      "title": "Space Fact: Pluto takes 248 Earth years to complete one orbit ...",
+      "content": "Pluto takes 248 Earth years to complete one orbit around the Sun.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232383
+    },
+    {
+      "title": "Space Fact: One million Earths could fit inside the Sun, and 1...",
+      "content": "One million Earths could fit inside the Sun, and 1,300 Earths could fit inside Jupiter.",
+      "category": "space_facts",
+      "topics": [
+        "space",
+        "facts",
+        "astronomy"
+      ],
+      "source": "Curated Space Knowledge",
+      "scraped_at": 1753989121.232383
     }
   ]
 }

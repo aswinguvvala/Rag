@@ -91,9 +91,9 @@ class SimpleRAGSystem:
         elif not self.openai_api_key:
             print("⚠️ OpenAI API key not found in environment variables")
         
-        # Legacy Ollama configuration (fallback for local development)
+        # Qwen-first Ollama configuration (primary AI model)
         self.ollama_url = "http://localhost:11434"
-        self.ollama_model = "llama3.2:3b"  # Default model
+        self.ollama_model = "qwen2.5:0.5b"  # Primary Qwen model - lightweight and fast
         
         # Search configuration - optimized for cloud deployment
         self.similarity_threshold = 0.4  # Higher threshold for quality results
@@ -176,15 +176,19 @@ class SimpleRAGSystem:
             except Exception as e:
                 print(f"⚠️ Document index error: {e}, continuing...")
             
-            # Test Ollama connection (non-blocking)
-            try:
-                if await self._test_ollama():
-                    success_count += 1
-                    print("✅ Ollama connection verified")
-                else:
-                    print("⚠️ Ollama not available, web search only mode")
-            except Exception as e:
-                print(f"⚠️ Ollama test error: {e}, web search only mode")
+            # Test Ollama connection (non-blocking) - skip for cloud deployment
+            if self.openai_available:
+                print("✅ OpenAI configured, skipping Ollama test for cloud deployment")
+                success_count += 1
+            else:
+                try:
+                    if await self._test_ollama():
+                        success_count += 1
+                        print("✅ Ollama connection verified")
+                    else:
+                        print("⚠️ Ollama not available, OpenAI mode")
+                except Exception as e:
+                    print(f"⚠️ Ollama test error: {e}, OpenAI mode")
             
             # System is functional if at least embedding model works
             if success_count >= 1:
@@ -688,8 +692,8 @@ class SimpleRAGSystem:
                     available_models = [model['name'] for model in models_data.get('models', [])]
                     print(f"🤖 Available Ollama models: {', '.join(available_models)}")
                     
-                    # Choose best available model (prioritize small models to prevent crashes)
-                    preferred_models = ["llama3.2:3b", "llama3.2:1b"]
+                    # Choose best available model (prioritize Qwen models for performance)
+                    preferred_models = ["qwen2.5:0.5b", "qwen2.5:1.5b", "qwen2.5:3b", "llama3.2:1b", "llama3.2:3b"]
                     for model in preferred_models:
                         if model in available_models:
                             self.ollama_model = model
@@ -748,54 +752,33 @@ class SimpleRAGSystem:
                 for i, result in enumerate(local_results[:3]):
                     print(f"   {i+1}. Similarity: {result.similarity:.3f}, Title: {result.title[:50]}...")
             
-            # Step 3: Simple binary decision - local vs web search
+            # Step 3: Qwen-first decision logic for three scenarios
             if local_results and local_results[0].similarity >= self.similarity_threshold:
-                print(f"✅ Using local results (similarity: {local_results[0].similarity:.3f})")
+                # FLOW 1: Local Database → Qwen with local content
+                print(f"🔄 FLOW 1: Local content found (similarity: {local_results[0].similarity:.3f}) → Qwen processing")
                 search_results = local_results[:self.max_local_results]
-                search_method = "local_search"
+                search_method = "qwen_local_content"
             else:
+                # FLOW 2: No good local content → Try DuckDuckGo → Qwen with web content
                 best_similarity = local_results[0].similarity if local_results else 0.0
-                print(f"🌐 Using web search (best local similarity: {best_similarity:.3f} < threshold {self.similarity_threshold})")
+                print(f"🔄 FLOW 2: No local content (similarity: {best_similarity:.3f}) → DuckDuckGo → Qwen processing")
                 web_results = await self._search_web(query)
                 print(f"🌐 DEBUG - Web search returned {len(web_results) if web_results else 0} results")
-                search_results = web_results[:self.max_web_results] if web_results else []
-                search_method = "web_search"
+                
+                if web_results:
+                    search_results = web_results[:self.max_web_results]
+                    search_method = "qwen_web_content"
+                else:
+                    # FLOW 3: Web search failed → Qwen general knowledge
+                    print(f"🔄 FLOW 3: Web search failed → Qwen general knowledge mode")
+                    search_results = []  # No search results, will use general knowledge
+                    search_method = "qwen_general_knowledge"
             
             print(f"📋 DEBUG - Final search results: {len(search_results) if search_results else 0}")
+            print(f"🎯 DEBUG - Selected method: {search_method}")
             
-            # Smart fallback system - never return "No search results found"
-            if not search_results:
-                print("🚨 DEBUG - No search results found! Applying smart fallbacks...")
-                print(f"   Local results available: {len(local_results) if local_results else 0}")
-                print(f"   Best local similarity: {local_results[0].similarity if local_results else 'N/A'}")
-                print(f"   Similarity threshold: {self.similarity_threshold}")
-                print(f"   Web search attempted: {search_method == 'web_search'}")
-                
-                # Fallback 1: Use local results with lower threshold (0.2)
-                if local_results and local_results[0].similarity >= 0.2:
-                    print(f"🆘 FALLBACK 1: Using local results with lowered threshold (similarity: {local_results[0].similarity:.3f})")
-                    search_results = local_results[:self.max_local_results]
-                    search_method = "local_search_emergency"
-                
-                # Fallback 2: Use any local results as last resort
-                elif local_results:
-                    print(f"🆘 FALLBACK 2: Using best local results regardless of similarity (similarity: {local_results[0].similarity:.3f})")
-                    search_results = local_results[:self.max_local_results]
-                    search_method = "local_search_desperate"
-                
-                # Fallback 3: Create a helpful error response explaining the issue
-                else:
-                    print("🆘 FALLBACK 3: No local results available, creating informative error response")
-                    error_msg = f"I'm having trouble finding information about '{query}'. "
-                    
-                    if search_method == "web_search":
-                        error_msg += "Both my knowledge base and web search didn't return useful results. This might be due to a temporary network issue or the query being too specific. Please try rephrasing your question or try again in a moment."
-                    else:
-                        error_msg += "This topic isn't in my knowledge base and web search isn't available. Please try a question related to space, science, or technology topics that I have information about."
-                    
-                    return self._error_response(error_msg)
-            
-            # Step 4: Generate response with smart LLM selection (OpenAI-first for cloud)
+            # Step 4: Generate response with Qwen-first approach
+            # All three flows are handled by _generate_smart_response which prioritizes Qwen
             response = await self._generate_smart_response(query, search_results)
             
             processing_time = time.time() - start_time
@@ -830,7 +813,7 @@ class SimpleRAGSystem:
                     results.append(SearchResult(
                         content=doc["content"],
                         title=doc["title"],
-                        source=f"Local Knowledge Base - {doc['category']}",
+                        source=doc.get('url', f"Local Knowledge Base - {doc['category']}"),
                         similarity=float(sim),
                         source_type="local"
                     ))
@@ -871,6 +854,15 @@ class SimpleRAGSystem:
                 )
                 title = result.title if hasattr(result, 'title') and result.title else "Web Result"
                 url = result.url if hasattr(result, 'url') and result.url else "Web Search"
+                
+                # Ensure URL is properly formatted as absolute URL
+                if url and url != "Web Search":
+                    if url.startswith('//'):
+                        url = 'https:' + url
+                    elif url.startswith('/'):
+                        url = 'https://duckduckgo.com' + url  # Fallback for relative paths
+                    elif not url.startswith(('http://', 'https://')):
+                        url = 'https://' + url
                 
                 print(f"   {i+1}. Title: {title[:50]}...")
                 print(f"      Content length: {len(content) if content else 0}")
@@ -1046,27 +1038,134 @@ ANSWER:"""
             print(f"⚠️ OpenAI generation failed: {e}")
             return f"I found relevant information but couldn't generate a response due to a technical issue: {str(e)}. Please check your OpenAI API key and try again."
     
+    async def _generate_qwen_response(self, query: str, search_results: List[SearchResult], mode: str = "with_context") -> str:
+        """Generate response using Qwen models with optimized parameters"""
+        # Health check before making request
+        if not await self._check_ollama_health():
+            return "Qwen AI service is currently unavailable. Please try again in a moment or check if Ollama is running."
+        
+        max_retries = 2
+        for attempt in range(max_retries + 1):
+            try:
+                # Prepare context based on mode
+                if mode == "with_context" and search_results:
+                    # Mode: Local content or web search results available
+                    context_parts = []
+                    for i, result in enumerate(search_results, 1):
+                        # Optimize content length for Qwen 0.5B (smaller context window)
+                        content = result.content[:1000] if result.content else ""
+                        context_parts.append(f"[Source {i}] {result.title}\n{content}\n")
+                    
+                    context = "\n".join(context_parts)
+                    
+                    # Limit total context for Qwen 0.5B efficiency
+                    if len(context) > 6000:
+                        context = context[:6000] + "\n[Context truncated for optimal performance]"
+                    
+                    # Qwen-optimized prompt with context
+                    prompt = f"""Based on the provided information, answer the user's question clearly and accurately. Be concise but informative.
+
+CONTEXT:
+{context}
+
+QUESTION: {query}
+
+Answer:"""
+
+                elif mode == "general_knowledge":
+                    # Mode: No context available, use Qwen's general knowledge
+                    prompt = f"""Answer the following question using your general knowledge. Be clear, accurate, and helpful. If you're not certain about something, say so.
+
+QUESTION: {query}
+
+Answer:"""
+                
+                else:
+                    # Default mode with minimal context
+                    prompt = f"""Answer this question clearly and helpfully: {query}"""
+
+                # Qwen-optimized parameters (smaller model, need efficient settings)
+                timeout = 90 if attempt == 0 else 120  # Reasonable timeout for 0.5B model
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout)) as session:
+                    payload = {
+                        "model": self.ollama_model,
+                        "prompt": prompt,
+                        "stream": False,
+                        "options": {
+                            "temperature": 0.3,      # Balanced creativity/accuracy for Qwen
+                            "top_p": 0.9,           # Good diversity for small model
+                            "max_tokens": 1000,     # Reasonable limit for 0.5B
+                            "num_ctx": 8192,        # Context window for Qwen
+                            "repeat_penalty": 1.1,  # Prevent repetition
+                            "top_k": 40             # Vocabulary restriction
+                        }
+                    }
+                    
+                    async with session.post(f"{self.ollama_url}/api/generate", json=payload) as response:
+                        if response.status == 200:
+                            result = await response.json()
+                            generated_response = result.get("response", "").strip()
+                            
+                            if generated_response:
+                                print(f"✅ Qwen generated response ({len(generated_response)} chars)")
+                                return generated_response
+                            else:
+                                print(f"⚠️ Qwen returned empty response on attempt {attempt + 1}")
+                                if attempt < max_retries:
+                                    continue
+                                return "I received your request but couldn't generate a meaningful response. Please try rephrasing your question."
+                        else:
+                            print(f"⚠️ Qwen HTTP error {response.status} on attempt {attempt + 1}")
+                            if attempt < max_retries:
+                                await asyncio.sleep(2)
+                                continue
+                            return f"Qwen service error (HTTP {response.status}). Please try again later."
+                
+            except asyncio.TimeoutError:
+                print(f"⚠️ Qwen timeout on attempt {attempt + 1}")
+                if attempt < max_retries:
+                    await asyncio.sleep(1)
+                    continue
+                return "The request timed out while processing. Please try a simpler question or wait a moment before trying again."
+            
+            except Exception as e:
+                print(f"⚠️ Qwen generation failed on attempt {attempt + 1}: {e}")
+                if attempt < max_retries:
+                    await asyncio.sleep(1)
+                    continue
+                return f"I found relevant information but couldn't generate a response due to a technical issue: {str(e)}. Please check that Ollama with Qwen is running and try again."
+        
+        return "Unable to generate response after multiple attempts. Please try again later."
+    
     async def _generate_smart_response(self, query: str, search_results: List[SearchResult]) -> str:
         """Smart LLM selection with OpenAI-first approach for cloud deployment"""
-        # Detect environment - prioritize OpenAI for cloud deployment
-        is_streamlit_cloud = os.getenv('STREAMLIT_SHARING_MODE') or os.getenv('STREAMLIT_CLOUD')
-        
-        # OpenAI-first approach (best for cloud deployment and recruiter showcase)
+        # OpenAI-first approach for cloud deployment - more reliable
         if self.openai_available:
-            print("🚀 Generating response with OpenAI (gpt-4o-mini)...")
+            print("🚀 Using OpenAI (gpt-4o-mini) as primary AI model...")
             try:
                 return await self._generate_openai_response(query, search_results)
             except Exception as e:
-                print(f"⚠️ OpenAI failed, trying fallback: {e}")
+                print(f"⚠️ OpenAI generation failed: {e}")
         
-        # Fallback to Ollama for local development (if available)
-        if not is_streamlit_cloud:
-            print("🤖 Trying Ollama as fallback...")
+        # Fallback to local Qwen if OpenAI fails (and if available)
+        print("🧠 Trying local Qwen as fallback...")
+        try:
+            if await self._check_ollama_health():
+                # Determine mode based on available search results
+                mode = "with_context" if search_results else "general_knowledge"
+                return await self._generate_qwen_response(query, search_results, mode)
+            else:
+                print("⚠️ Qwen/Ollama service not available")
+        except Exception as e:
+            print(f"⚠️ Qwen generation failed: {e}")
+        
+        # This should not be reached if OpenAI is properly configured
+        if self.openai_available:
+            print("🔄 Retrying OpenAI after Qwen fallback failed...")
             try:
-                if await self._check_ollama_health():
-                    return await self._generate_ollama_response(query, search_results)
+                return await self._generate_openai_response(query, search_results)
             except Exception as e:
-                print(f"⚠️ Ollama fallback failed: {e}")
+                print(f"⚠️ OpenAI fallback failed: {e}")
         
         # Final fallback to simple response
         print("📝 Using simple response generation...")
