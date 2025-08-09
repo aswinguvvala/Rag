@@ -1,0 +1,64 @@
+# IntelliSearch Systemd Service Configuration
+# Location: /etc/systemd/system/intellisearch.service
+# 
+# This service provides:
+# - Automatic startup on boot
+# - Auto-restart on failure
+# - Proper logging and resource management
+# - EC2 free tier optimizations
+
+[Unit]
+Description=IntelliSearch RAG System
+Documentation=https://github.com/yourusername/intellisearch
+After=network.target
+After=multi-user.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/intellisearch
+
+# Environment configuration
+Environment=PATH=/home/ubuntu/intellisearch/venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PYTHONPATH=/home/ubuntu/intellisearch
+Environment=STREAMLIT_SERVER_HEADLESS=true
+Environment=STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+Environment=STREAMLIT_SERVER_FILE_WATCHER_TYPE=none
+
+# Start command
+ExecStart=/home/ubuntu/intellisearch/start_production.sh start
+ExecStop=/home/ubuntu/intellisearch/start_production.sh stop
+ExecReload=/home/ubuntu/intellisearch/start_production.sh restart
+
+# Process management
+PIDFile=/home/ubuntu/intellisearch/intellisearch.pid
+Restart=always
+RestartSec=10
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Resource limits (optimized for EC2 free tier)
+MemoryMax=800M
+MemoryHigh=600M
+TasksMax=50
+
+# Security settings
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/ubuntu/intellisearch
+PrivateTmp=true
+
+# Logging
+StandardOutput=append:/home/ubuntu/intellisearch/logs/service.log
+StandardError=append:/home/ubuntu/intellisearch/logs/service-error.log
+SyslogIdentifier=intellisearch
+
+# Timeout settings
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
